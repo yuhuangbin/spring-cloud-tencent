@@ -20,16 +20,17 @@ package com.tencent.cloud.polaris.extend.consul;
 import java.util.List;
 import java.util.Map;
 
-import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.cloud.polaris.context.PolarisSDKContextManager;
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.INSTANCE_ID_KEY;
 import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.IP_ADDRESS_KEY;
@@ -44,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Haotian Zhang
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = ConsulContextPropertiesTest.TestApplication.class)
 @ActiveProfiles("test")
 public class ConsulContextPropertiesTest {
@@ -53,7 +54,12 @@ public class ConsulContextPropertiesTest {
 	private ConsulContextProperties consulContextProperties;
 
 	@Autowired
-	private SDKContext sdkContext;
+	private PolarisSDKContextManager polarisSDKContextManager;
+
+	@BeforeEach
+	void setUp() {
+		PolarisSDKContextManager.innerDestroy();
+	}
 
 	@Test
 	public void testDefaultInitialization() {
@@ -67,8 +73,9 @@ public class ConsulContextPropertiesTest {
 
 	@Test
 	public void testModify() {
-		assertThat(sdkContext).isNotNull();
-		com.tencent.polaris.api.config.Configuration configuration = sdkContext.getConfig();
+		assertThat(polarisSDKContextManager).isNotNull();
+		com.tencent.polaris.api.config.Configuration configuration = polarisSDKContextManager.getSDKContext()
+				.getConfig();
 		List<ServerConnectorConfigImpl> serverConnectorConfigs = configuration.getGlobal().getServerConnectors();
 		Map<String, String> metadata = null;
 		for (ServerConnectorConfigImpl serverConnectorConfig : serverConnectorConfigs) {
@@ -86,5 +93,8 @@ public class ConsulContextPropertiesTest {
 	@SpringBootApplication
 	protected static class TestApplication {
 
+		static {
+			PolarisSDKContextManager.innerDestroy();
+		}
 	}
 }

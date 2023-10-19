@@ -29,15 +29,20 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.tencent.cloud.common.constant.MetadataConstant;
+import com.tencent.cloud.common.constant.OrderConstant;
 import com.tencent.cloud.common.metadata.MetadataContextHolder;
 import com.tencent.cloud.common.util.JacksonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.core.annotation.Order;
+import org.springframework.lang.NonNull;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import static com.tencent.cloud.common.constant.ContextConstant.UTF_8;
+import static com.tencent.cloud.common.constant.MetadataConstant.HeaderName.CUSTOM_DISPOSABLE_METADATA;
+import static com.tencent.cloud.common.constant.MetadataConstant.HeaderName.CUSTOM_METADATA;
 
 /**
  * Filter used for storing the metadata from upstream temporarily when web application is
@@ -45,38 +50,43 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *
  * @author Haotian Zhang
  */
-@Order(MetadataConstant.OrderConstant.WEB_FILTER_ORDER)
+@Order(OrderConstant.Server.Servlet.DECODE_TRANSFER_METADATA_FILTER_ORDER)
 public class DecodeTransferMetadataServletFilter extends OncePerRequestFilter {
 
 	private static final Logger LOG = LoggerFactory.getLogger(DecodeTransferMetadataServletFilter.class);
 
 	@Override
-	protected void doFilterInternal(HttpServletRequest httpServletRequest,
-			HttpServletResponse httpServletResponse, FilterChain filterChain)
+	protected void doFilterInternal(@NonNull HttpServletRequest httpServletRequest,
+			@NonNull HttpServletResponse httpServletResponse, FilterChain filterChain)
 			throws ServletException, IOException {
-		Map<String, String> internalTransitiveMetadata = getInternalTransitiveMetadata(httpServletRequest);
+		Map<String, String> internalTransitiveMetadata = getInternalMetadata(httpServletRequest, CUSTOM_METADATA);
 		Map<String, String> customTransitiveMetadata = CustomTransitiveMetadataResolver.resolve(httpServletRequest);
 
 		Map<String, String> mergedTransitiveMetadata = new HashMap<>();
 		mergedTransitiveMetadata.putAll(internalTransitiveMetadata);
 		mergedTransitiveMetadata.putAll(customTransitiveMetadata);
 
-		try {
-			MetadataContextHolder.init(mergedTransitiveMetadata);
+		Map<String, String> internalDisposableMetadata = getInternalMetadata(httpServletRequest, CUSTOM_DISPOSABLE_METADATA);
+		Map<String, String> mergedDisposableMetadata = new HashMap<>(internalDisposableMetadata);
 
+		MetadataContextHolder.init(mergedTransitiveMetadata, mergedDisposableMetadata);
+
+		TransHeadersTransfer.transfer(httpServletRequest);
+		try {
 			filterChain.doFilter(httpServletRequest, httpServletResponse);
 		}
-		catch (IOException | ServletException | RuntimeException e) {
-			throw e;
+		finally {
+			// Clean up ThreadLocal.
+			MetadataContextHolder.remove();
 		}
 	}
 
-	private Map<String, String> getInternalTransitiveMetadata(HttpServletRequest httpServletRequest) {
+	private Map<String, String> getInternalMetadata(HttpServletRequest httpServletRequest, String headerName) {
 		// Get custom metadata string from http header.
-		String customMetadataStr = httpServletRequest.getHeader(MetadataConstant.HeaderName.CUSTOM_METADATA);
+		String customMetadataStr = httpServletRequest.getHeader(headerName);
 		try {
 			if (StringUtils.hasText(customMetadataStr)) {
-				customMetadataStr = URLDecoder.decode(customMetadataStr, "UTF-8");
+				customMetadataStr = URLDecoder.decode(customMetadataStr, UTF_8);
 			}
 		}
 		catch (UnsupportedEncodingException e) {
@@ -87,5 +97,4 @@ public class DecodeTransferMetadataServletFilter extends OncePerRequestFilter {
 		// create custom metadata.
 		return JacksonUtils.deserialize2Map(customMetadataStr);
 	}
-
 }

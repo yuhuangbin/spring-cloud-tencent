@@ -17,12 +17,8 @@
 
 package com.tencent.cloud.polaris.discovery;
 
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.cloud.client.CommonsClientAutoConfiguration;
 import org.springframework.cloud.client.ConditionalOnBlockingDiscoveryEnabled;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
-import org.springframework.cloud.client.discovery.simple.SimpleDiscoveryClientAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -33,13 +29,11 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnBlockingDiscoveryEnabled
-@AutoConfigureBefore({ SimpleDiscoveryClientAutoConfiguration.class, CommonsClientAutoConfiguration.class })
-@AutoConfigureAfter(PolarisDiscoveryAutoConfiguration.class)
+@ConditionalOnPolarisDiscoveryEnabled
 public class PolarisDiscoveryClientConfiguration {
 
 	@Bean
 	public DiscoveryClient polarisDiscoveryClient(PolarisServiceDiscovery polarisServiceDiscovery) {
 		return new PolarisDiscoveryClient(polarisServiceDiscovery);
 	}
-
 }

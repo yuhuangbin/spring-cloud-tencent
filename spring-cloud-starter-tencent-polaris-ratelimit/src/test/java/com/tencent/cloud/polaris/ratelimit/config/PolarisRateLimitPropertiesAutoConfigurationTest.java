@@ -17,7 +17,8 @@
 
 package com.tencent.cloud.polaris.ratelimit.config;
 
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -31,9 +32,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class PolarisRateLimitPropertiesAutoConfigurationTest {
 
-	private ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-			.withConfiguration(
-					AutoConfigurations.of(PolarisRateLimitPropertiesAutoConfiguration.class));
+	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+			.withConfiguration(AutoConfigurations.of(PolarisRateLimitPropertiesAutoConfiguration.class));
 
 	@Test
 	public void testDefaultInitialization() {

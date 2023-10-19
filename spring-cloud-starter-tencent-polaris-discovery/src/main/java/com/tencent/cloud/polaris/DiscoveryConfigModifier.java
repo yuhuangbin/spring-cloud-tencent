@@ -18,23 +18,24 @@
 
 package com.tencent.cloud.polaris;
 
-import com.tencent.cloud.common.constant.ContextConstant;
+import com.tencent.cloud.common.constant.OrderConstant;
 import com.tencent.cloud.polaris.context.PolarisConfigModifier;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.plugins.router.healthy.RecoverRouterConfig;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
 /**
- *  Spring Cloud Tencent config Override polaris config.
+ * Spring Cloud Tencent config Override polaris config.
  *
- *@author lepdou 2022-04-24
+ * @author lepdou 2022-04-24
  */
 public class DiscoveryConfigModifier implements PolarisConfigModifier {
 
-	@Autowired
-	private PolarisDiscoveryProperties polarisDiscoveryProperties;
+	private final PolarisDiscoveryProperties polarisDiscoveryProperties;
+
+	public DiscoveryConfigModifier(PolarisDiscoveryProperties polarisDiscoveryProperties) {
+		this.polarisDiscoveryProperties = polarisDiscoveryProperties;
+	}
 
 	@Override
 	public void modify(ConfigurationImpl configuration) {
@@ -54,6 +55,6 @@ public class DiscoveryConfigModifier implements PolarisConfigModifier {
 
 	@Override
 	public int getOrder() {
-		return ContextConstant.ModifierOrder.DISCOVERY_ORDER;
+		return OrderConstant.Modifier.DISCOVERY_ORDER;
 	}
 }

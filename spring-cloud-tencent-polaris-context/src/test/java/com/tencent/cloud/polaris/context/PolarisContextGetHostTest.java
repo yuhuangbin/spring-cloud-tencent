@@ -17,35 +17,47 @@
 
 package com.tencent.cloud.polaris.context;
 
+import com.tencent.cloud.polaris.context.config.PolarisContextAutoConfiguration;
+import com.tencent.cloud.polaris.context.config.PolarisContextProperties;
 import com.tencent.polaris.client.api.SDKContext;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.platform.commons.util.StringUtils;
-import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@RunWith(SpringRunner.class)
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Test for {@link SDKContext}.
+ *
+ * @author Haotian Zhang
+ */
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = PolarisContextApplication.class,
-		properties = { "spring.config.location = classpath:bootstrap.yml" })
-@ImportAutoConfiguration({ PolarisContextAutoConfiguration.class })
+		properties = {"spring.config.location = classpath:bootstrap.yml"})
+@ImportAutoConfiguration({PolarisContextAutoConfiguration.class})
 public class PolarisContextGetHostTest {
 
 	@Autowired
-	private SDKContext polarisContext;
+	private PolarisSDKContextManager polarisSDKContextManager;
 
 	@Autowired
 	private PolarisContextProperties polarisContextProperties;
 
 	@Test
 	public void testGetConfigHost() {
-		String bindIP = polarisContext.getConfig().getGlobal().getAPI().getBindIP();
-		Assert.assertFalse(StringUtils.isBlank(bindIP));
-		Assert.assertEquals(bindIP, "192.168.1.1");
-		Assert.assertEquals(polarisContextProperties.getNamespace(), "dev");
+		String bindIP = polarisSDKContextManager.getSDKContext().getConfig().getGlobal().getAPI().getBindIP();
+		assertThat(StringUtils.isBlank(bindIP)).isFalse();
+		assertThat(bindIP).isEqualTo("192.168.1.1");
+		assertThat(polarisContextProperties.getAddress()).isEqualTo("grpc://127.0.0.1:8091");
+		assertThat(polarisContextProperties.getLocalIpAddress()).isEqualTo("192.168.1.1");
+		assertThat(polarisContextProperties.getEnabled()).isTrue();
+		assertThat(polarisContextProperties.getNamespace()).isEqualTo("dev");
+		assertThat(polarisContextProperties.getService()).isEqualTo("TestApp");
+		assertThat(polarisContextProperties.getLocalPort()).isEqualTo(9090);
 	}
-
 }

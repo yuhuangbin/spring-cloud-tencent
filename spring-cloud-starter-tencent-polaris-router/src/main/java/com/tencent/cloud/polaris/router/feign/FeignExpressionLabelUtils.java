@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import com.tencent.cloud.common.util.ExpressionLabelUtils;
+import com.tencent.cloud.common.util.expresstion.ExpressionLabelUtils;
 import feign.RequestTemplate;
 import org.apache.commons.lang.StringUtils;
 
@@ -33,9 +33,13 @@ import org.springframework.util.CollectionUtils;
 
 /**
  * Resolve rule expression label from feign request.
+ *
  * @author lepdou 2022-05-20
  */
-public class FeignExpressionLabelUtils {
+public final class FeignExpressionLabelUtils {
+
+	private FeignExpressionLabelUtils() {
+	}
 
 	public static Map<String, String> resolve(RequestTemplate request, Set<String> labelKeys) {
 		if (CollectionUtils.isEmpty(labelKeys)) {
@@ -45,24 +49,31 @@ public class FeignExpressionLabelUtils {
 		Map<String, String> labels = new HashMap<>();
 
 		for (String labelKey : labelKeys) {
-			if (StringUtils.startsWithIgnoreCase(labelKey, ExpressionLabelUtils.LABEL_HEADER_PREFIX)) {
+			if (ExpressionLabelUtils.isHeaderLabel(labelKey)) {
 				String headerKey = ExpressionLabelUtils.parseHeaderKey(labelKey);
 				if (StringUtils.isBlank(headerKey)) {
 					continue;
 				}
 				labels.put(labelKey, getHeaderValue(request, headerKey));
 			}
-			else if (StringUtils.startsWithIgnoreCase(labelKey, ExpressionLabelUtils.LABEL_QUERY_PREFIX)) {
+			else if (ExpressionLabelUtils.isQueryLabel(labelKey)) {
 				String queryKey = ExpressionLabelUtils.parseQueryKey(labelKey);
 				if (StringUtils.isBlank(queryKey)) {
 					continue;
 				}
 				labels.put(labelKey, getQueryValue(request, queryKey));
 			}
-			else if (StringUtils.equalsIgnoreCase(ExpressionLabelUtils.LABEL_METHOD, labelKey)) {
+			else if (ExpressionLabelUtils.isCookieLabel(labelKey)) {
+				String cookieKey = ExpressionLabelUtils.parseCookieKey(labelKey);
+				if (StringUtils.isBlank(cookieKey)) {
+					continue;
+				}
+				labels.put(labelKey, getCookieValue(request, cookieKey));
+			}
+			else if (ExpressionLabelUtils.isMethodLabel(labelKey)) {
 				labels.put(labelKey, request.method());
 			}
-			else if (StringUtils.equalsIgnoreCase(ExpressionLabelUtils.LABEL_URI, labelKey)) {
+			else if (ExpressionLabelUtils.isUriLabel(labelKey)) {
 				URI uri = URI.create(request.request().url());
 				labels.put(labelKey, uri.getPath());
 			}
@@ -79,5 +90,10 @@ public class FeignExpressionLabelUtils {
 
 	public static String getQueryValue(RequestTemplate request, String key) {
 		return ExpressionLabelUtils.getFirstValue(request.queries(), key);
+	}
+
+	public static String getCookieValue(RequestTemplate request, String key) {
+		Map<String, Collection<String>> headers = request.headers();
+		return ExpressionLabelUtils.getCookieFirstValue(headers, key);
 	}
 }

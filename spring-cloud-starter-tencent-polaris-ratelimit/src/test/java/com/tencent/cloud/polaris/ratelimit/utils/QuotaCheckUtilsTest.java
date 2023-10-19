@@ -17,15 +17,18 @@
 
 package com.tencent.cloud.polaris.ratelimit.utils;
 
+import java.util.HashMap;
+import java.util.HashSet;
+
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -37,13 +40,13 @@ import static org.mockito.Mockito.when;
  *
  * @author Haotian Zhang
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class QuotaCheckUtilsTest {
 
 	private LimitAPI limitAPI;
 
-	@Before
-	public void setUp() {
+	@BeforeEach
+	void setUp() {
 		limitAPI = mock(LimitAPI.class);
 		when(limitAPI.getQuota(any(QuotaRequest.class))).thenAnswer(invocationOnMock -> {
 			String serviceName = ((QuotaRequest) invocationOnMock.getArgument(0)).getService();
@@ -66,28 +69,59 @@ public class QuotaCheckUtilsTest {
 	public void testGetQuota() {
 		// Pass
 		String serviceName = "TestApp1";
-		QuotaResponse quotaResponse = QuotaCheckUtils.getQuota(limitAPI, null, serviceName, 1, null, null);
+		QuotaResponse quotaResponse = QuotaCheckUtils.getQuota(limitAPI, null, serviceName, 1, new HashMap<>(), null);
 		assertThat(quotaResponse.getCode()).isEqualTo(QuotaResultCode.QuotaResultOk);
 		assertThat(quotaResponse.getWaitMs()).isEqualTo(0);
 		assertThat(quotaResponse.getInfo()).isEqualTo("QuotaResultOk");
 
 		// Unirate waiting 1000ms
 		serviceName = "TestApp2";
-		quotaResponse = QuotaCheckUtils.getQuota(limitAPI, null, serviceName, 1, null, null);
+		quotaResponse = QuotaCheckUtils.getQuota(limitAPI, null, serviceName, 1, new HashMap<>(), null);
 		assertThat(quotaResponse.getCode()).isEqualTo(QuotaResultCode.QuotaResultOk);
 		assertThat(quotaResponse.getWaitMs()).isEqualTo(1000);
 		assertThat(quotaResponse.getInfo()).isEqualTo("QuotaResultOk");
 
 		// Rate limited
 		serviceName = "TestApp3";
-		quotaResponse = QuotaCheckUtils.getQuota(limitAPI, null, serviceName, 1, null, null);
+		quotaResponse = QuotaCheckUtils.getQuota(limitAPI, null, serviceName, 1, new HashMap<>(), null);
 		assertThat(quotaResponse.getCode()).isEqualTo(QuotaResultCode.QuotaResultLimited);
 		assertThat(quotaResponse.getWaitMs()).isEqualTo(0);
 		assertThat(quotaResponse.getInfo()).isEqualTo("QuotaResultLimited");
 
 		// Exception
 		serviceName = "TestApp4";
-		quotaResponse = QuotaCheckUtils.getQuota(limitAPI, null, serviceName, 1, null, null);
+		quotaResponse = QuotaCheckUtils.getQuota(limitAPI, null, serviceName, 1, new HashMap<>(), null);
+		assertThat(quotaResponse.getCode()).isEqualTo(QuotaResultCode.QuotaResultOk);
+		assertThat(quotaResponse.getWaitMs()).isEqualTo(0);
+		assertThat(quotaResponse.getInfo()).isEqualTo("get quota failed");
+	}
+
+	@Test
+	public void testGetQuota2() {
+		// Pass
+		String serviceName = "TestApp1";
+		QuotaResponse quotaResponse = QuotaCheckUtils.getQuota(limitAPI, null, serviceName, 1, new HashSet<>(), null);
+		assertThat(quotaResponse.getCode()).isEqualTo(QuotaResultCode.QuotaResultOk);
+		assertThat(quotaResponse.getWaitMs()).isEqualTo(0);
+		assertThat(quotaResponse.getInfo()).isEqualTo("QuotaResultOk");
+
+		// Unirate waiting 1000ms
+		serviceName = "TestApp2";
+		quotaResponse = QuotaCheckUtils.getQuota(limitAPI, null, serviceName, 1, new HashSet<>(), null);
+		assertThat(quotaResponse.getCode()).isEqualTo(QuotaResultCode.QuotaResultOk);
+		assertThat(quotaResponse.getWaitMs()).isEqualTo(1000);
+		assertThat(quotaResponse.getInfo()).isEqualTo("QuotaResultOk");
+
+		// Rate limited
+		serviceName = "TestApp3";
+		quotaResponse = QuotaCheckUtils.getQuota(limitAPI, null, serviceName, 1, new HashSet<>(), null);
+		assertThat(quotaResponse.getCode()).isEqualTo(QuotaResultCode.QuotaResultLimited);
+		assertThat(quotaResponse.getWaitMs()).isEqualTo(0);
+		assertThat(quotaResponse.getInfo()).isEqualTo("QuotaResultLimited");
+
+		// Exception
+		serviceName = "TestApp4";
+		quotaResponse = QuotaCheckUtils.getQuota(limitAPI, null, serviceName, 1, new HashSet<>(), null);
 		assertThat(quotaResponse.getCode()).isEqualTo(QuotaResultCode.QuotaResultOk);
 		assertThat(quotaResponse.getWaitMs()).isEqualTo(0);
 		assertThat(quotaResponse.getInfo()).isEqualTo("get quota failed");

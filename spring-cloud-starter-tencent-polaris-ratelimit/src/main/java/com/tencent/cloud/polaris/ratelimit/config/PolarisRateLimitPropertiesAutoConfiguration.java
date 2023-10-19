@@ -17,12 +17,10 @@
 
 package com.tencent.cloud.polaris.ratelimit.config;
 
-import com.tencent.cloud.polaris.context.ConditionalOnPolarisEnabled;
-
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 
 /**
  * Properties auto configuration of rate limit.
@@ -30,8 +28,8 @@ import org.springframework.context.annotation.Import;
  * @author Haotian Zhang
  */
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnPolarisEnabled
-@Import({PolarisRateLimitProperties.class})
+@EnableConfigurationProperties(PolarisRateLimitProperties.class)
+@ConditionalOnPolarisRateLimitEnabled
 public class PolarisRateLimitPropertiesAutoConfiguration {
 
 	@Bean

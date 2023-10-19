@@ -17,46 +17,11 @@
 		<!-- Spring Cloud Tencent dependencies start -->
 		<dependency>
 			<groupId>com.tencent.cloud</groupId>
-			<artifactId>spring-cloud-tencent-polaris-loadbalancer</artifactId>
+			<artifactId>spring-cloud-tencent-rpc-enhancement</artifactId>
 		</dependency>
 		<!-- Spring Cloud Tencent dependencies end -->
 
 		<!-- Polaris dependencies start -->
-		<dependency>
-			<groupId>com.tencent.polaris</groupId>
-			<artifactId>polaris-discovery-factory</artifactId>
-			<exclusions>
-				<exclusion>
-					<groupId>com.tencent.polaris</groupId>
-					<artifactId>router-rule</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>com.tencent.polaris</groupId>
-					<artifactId>router-nearby</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>com.tencent.polaris</groupId>
-					<artifactId>router-metadata</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>com.tencent.polaris</groupId>
-					<artifactId>router-canary</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>com.tencent.polaris</groupId>
-					<artifactId>router-set</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>com.tencent.polaris</groupId>
-					<artifactId>router-isolated</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>com.tencent.polaris</groupId>
-					<artifactId>router-healthy</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
 		<dependency>
 			<groupId>com.tencent.polaris</groupId>
 			<artifactId>polaris-test-common</artifactId>
@@ -65,16 +30,28 @@
 
 		<dependency>
 			<groupId>com.tencent.polaris</groupId>
-			<artifactId>polaris-test-mock-discovery</artifactId>
+			<artifactId>connector-consul</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<!-- Polaris dependencies end -->
 
 		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-loadbalancer</artifactId>
-			<optional>true</optional>
+			<groupId>com.tencent.polaris</groupId>
+			<artifactId>connector-nacos</artifactId>
+			<scope>test</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>com.tencent.polaris</groupId>
+			<artifactId>polaris-test-mock-discovery</artifactId>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>junit</groupId>
+					<artifactId>junit</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<!-- Polaris dependencies end -->
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -91,6 +68,24 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-actuator</artifactId>
+			<optional>true</optional>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-actuator-autoconfigure</artifactId>
+			<optional>true</optional>
+		</dependency>
+
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-inline</artifactId>
 			<scope>test</scope>
 		</dependency>
 

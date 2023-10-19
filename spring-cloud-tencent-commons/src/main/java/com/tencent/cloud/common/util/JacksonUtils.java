@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +31,7 @@ import org.springframework.util.StringUtils;
 /**
  * Utils for Jackson.
  *
- * @author Haotian Zhang
+ * @author Haotian Zhang, cheese8
  */
 public final class JacksonUtils {
 
@@ -42,7 +43,6 @@ public final class JacksonUtils {
 	private static final Logger LOG = LoggerFactory.getLogger(JacksonUtils.class);
 
 	private JacksonUtils() {
-
 	}
 
 	/**
@@ -52,12 +52,39 @@ public final class JacksonUtils {
 	 * @return Json String
 	 */
 	public static <T> String serialize2Json(T object) {
+		return serialize2Json(object, false);
+	}
+
+	/**
+	 * Object to Json.
+	 * @param object object to be serialized
+	 * @param pretty pretty print
+	 * @param <T> type of object
+	 * @return Json String
+	 */
+	public static <T> String serialize2Json(T object, boolean pretty) {
 		try {
-			return OM.writeValueAsString(object);
+			if (pretty) {
+				ObjectWriter objectWriter = OM.writerWithDefaultPrettyPrinter();
+				return objectWriter.writeValueAsString(object);
+			}
+			else {
+				return OM.writeValueAsString(object);
+			}
 		}
 		catch (JsonProcessingException e) {
 			LOG.error("Object to Json failed. {}", object, e);
 			throw new RuntimeException("Object to Json failed.", e);
+		}
+	}
+
+	public static <T> T deserialize(String jsonStr, Class<T> type) {
+		try {
+			return OM.readValue(jsonStr, type);
+		}
+		catch (JsonProcessingException e) {
+			LOG.error("Json to object failed. {}", type, e);
+			throw new RuntimeException("Json to object failed.", e);
 		}
 	}
 
@@ -80,10 +107,8 @@ public final class JacksonUtils {
 		}
 		catch (JsonProcessingException e) {
 			LOG.error(
-					"Json to map failed. check if the format of the json string[{}] is correct.",
-					jsonStr, e);
+					"Json to map failed. check if the format of the json string[{}] is correct.", jsonStr, e);
 			throw new RuntimeException("Json to map failed.", e);
 		}
 	}
-
 }

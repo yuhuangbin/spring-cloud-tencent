@@ -43,6 +43,16 @@ public class MetadataLocalProperties {
 	 */
 	private List<String> transitive;
 
+	/**
+	 * A disposable metadata key list .
+	 */
+	private List<String> disposable;
+
+	/**
+	 * A transitive http header key list.
+	 */
+	private List<String> headers;
+
 	public Map<String, String> getContent() {
 		if (CollectionUtils.isEmpty(content)) {
 			content = new HashMap<>();
@@ -65,4 +75,25 @@ public class MetadataLocalProperties {
 		this.transitive = transitive;
 	}
 
+	public List<String> getDisposable() {
+		if (CollectionUtils.isEmpty(disposable)) {
+			disposable = new ArrayList<>();
+		}
+		return disposable;
+	}
+
+	public void setDisposable(List<String> disposable) {
+		this.disposable = disposable;
+	}
+
+	public List<String> getHeaders() {
+		if (CollectionUtils.isEmpty(headers)) {
+			headers = new ArrayList<>();
+		}
+		return headers;
+	}
+
+	public void setHeaders(List<String> headers) {
+		this.headers = headers;
+	}
 }

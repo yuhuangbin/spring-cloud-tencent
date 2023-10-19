@@ -14,6 +14,7 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
+
 package com.tencent.cloud.polaris.discovery.refresh;
 
 import java.util.Set;
@@ -39,7 +40,8 @@ import org.springframework.util.CollectionUtils;
  *
  * @author Haotian Zhang
  */
-public class PolarisServiceStatusChangeListener extends AbstractResourceEventListener implements ApplicationEventPublisherAware {
+public class PolarisServiceStatusChangeListener extends AbstractResourceEventListener
+		implements ApplicationEventPublisherAware {
 
 	/**
 	 * Index of service info status.

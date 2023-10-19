@@ -1,4 +1,5 @@
 ## PR Type
+
 <!--
 Bugfix.
 Feature.
@@ -10,16 +11,21 @@ Other... Please describe:
 
 ## Describe what this PR does for and how you did.
 
+## Adding the issue link (#xxx) if possible.
 
-## Does this PR be associated with issue? If so, please adding the issue link below.
-
+<!--
+fixes #
+ -->
 
 ## Note
 
+## Checklist
 
-### Checklist
-- [ ] Code compiles correctly
-- [ ] Create at least one junit test if possible
-- [ ] All tests passing
-- [ ] Extend documentation if necessary
-- [ ] Add myself / the copyright holder to the AUTHORS file
+- [ ] Add information of this PR to CHANGELOG.md in root of project.
+- [ ] Add documentation in javadoc or comment below the PR if necessary.
+
+## Checklist (Optional)
+
+- [ ] Will pull request to branch of 2020.0.
+- [ ] Will pull request to branch of 2022.0.
+- [ ] Will pull request to branch of hoxton.

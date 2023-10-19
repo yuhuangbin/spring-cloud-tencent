@@ -1,0 +1,76 @@
+{
+  "properties": [
+    {
+      "name": "spring.cloud.tencent.rpc-enhancement.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "If rpc enhancement enabled."
+    },
+    {
+      "name": "spring.cloud.tencent.rpc-enhancement.reporter.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Whether report call result to polaris."
+    },
+    {
+      "name": "spring.cloud.tencent.rpc-enhancement.reporter.ignore-internal-server-error",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "If ignore \"Internal Server Error Http Status Code (500)\"."
+    },
+    {
+      "name": "spring.cloud.tencent.rpc-enhancement.reporter.series",
+      "type": "java.util.List<org.springframework.http.HttpStatus.Series>",
+      "defaultValue": "HttpStatus.Series.SERVER_ERROR",
+      "description": "Specify List of HTTP status series that needs to be reported as FAILED when status list is empty."
+    },
+    {
+      "name": "spring.cloud.tencent.rpc-enhancement.reporter.statuses",
+      "type": "java.util.List<org.springframework.http.HttpStatus>",
+      "defaultValue": "",
+      "description": "Specify the Http status code(s) that needs to be reported as FAILED."
+    },
+    {
+      "name": "spring.cloud.polaris.stat.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Enable polaris stat reporter or not."
+    },
+    {
+      "name": "spring.cloud.polaris.stat.host",
+      "type": "java.lang.String",
+      "description": "Local host for prometheus to pull."
+    },
+    {
+      "name": "spring.cloud.polaris.stat.port",
+      "type": "java.lang.Integer",
+      "defaultValue": "0",
+      "description": "Port for prometheus to pull. 0 for random from 20000 to 65535."
+    },
+    {
+      "name": "spring.cloud.polaris.stat.path",
+      "type": "java.lang.String",
+      "defaultValue": "/metrics",
+      "description": "Path for prometheus to pull."
+    },
+    {
+      "name": "spring.cloud.polaris.stat.pushgateway.address",
+      "type": "java.lang.String",
+      "description": "PushGateway address.",
+      "sourceType": "com.tencent.cloud.plugin.pushgateway.PolarisStatPushGatewayProperties"
+    },
+    {
+      "name": "spring.cloud.polaris.stat.pushgateway.enabled",
+      "type": "java.lang.Boolean",
+      "description": "If state pushGateway reporter enabled.",
+      "sourceType": "com.tencent.cloud.plugin.pushgateway.PolarisStatPushGatewayProperties",
+      "defaultValue": false
+    },
+    {
+      "name": "spring.cloud.polaris.stat.pushgateway.push-interval",
+      "type": "java.lang.Long",
+      "description": "Push metrics interval. unit: milliseconds default 30s.",
+      "sourceType": "com.tencent.cloud.plugin.pushgateway.PolarisStatPushGatewayProperties"
+    }
+  ]
+}

@@ -20,11 +20,11 @@ package com.tencent.cloud.polaris.discovery;
 import java.util.List;
 
 import com.tencent.cloud.common.pojo.PolarisServiceInstance;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import org.springframework.cloud.client.ServiceInstance;
 
@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
  *
  * @author Haotian Zhang
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class PolarisDiscoveryClientTest {
 
 	@Mock
@@ -62,13 +62,11 @@ public class PolarisDiscoveryClientTest {
 
 	@Test
 	public void testGetServices() {
-
 		when(polarisServiceDiscovery.getServices()).thenReturn(singletonList(SERVICE_PROVIDER));
 
 		List<String> services = client.getServices();
 
 		assertThat(services).contains(SERVICE_PROVIDER).size().isEqualTo(1);
-
 	}
 
 	@Test

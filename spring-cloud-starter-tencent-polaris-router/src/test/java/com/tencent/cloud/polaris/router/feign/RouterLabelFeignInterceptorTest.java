@@ -27,46 +27,52 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.tencent.cloud.common.constant.OrderConstant;
+import com.tencent.cloud.common.constant.RouterConstant;
 import com.tencent.cloud.common.metadata.MetadataContext;
 import com.tencent.cloud.common.metadata.MetadataContextHolder;
-import com.tencent.cloud.common.metadata.config.MetadataLocalProperties;
+import com.tencent.cloud.common.metadata.StaticMetadataManager;
 import com.tencent.cloud.common.util.ApplicationContextAwareUtils;
 import com.tencent.cloud.common.util.JacksonUtils;
-import com.tencent.cloud.polaris.router.RouterConstants;
+import com.tencent.cloud.polaris.context.config.PolarisContextProperties;
 import com.tencent.cloud.polaris.router.RouterRuleLabelResolver;
-import com.tencent.cloud.polaris.router.spi.RouterLabelResolver;
+import com.tencent.cloud.polaris.router.spi.FeignRouterLabelResolver;
 import feign.RequestTemplate;
 import feign.Target;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 /**
- * test for {@link RouterLabelFeignInterceptor}
+ * test for {@link RouterLabelFeignInterceptor}.
  * @author lepdou 2022-05-26
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class RouterLabelFeignInterceptorTest {
 
 	@Mock
-	private MetadataLocalProperties metadataLocalProperties;
+	private StaticMetadataManager staticMetadataManager;
 	@Mock
 	private RouterRuleLabelResolver routerRuleLabelResolver;
 	@Mock
-	private RouterLabelResolver routerLabelResolver;
+	private FeignRouterLabelResolver routerLabelResolver;
+	@Mock
+	private PolarisContextProperties polarisContextProperties;
 
 	@Test
 	public void testResolveRouterLabel() throws UnsupportedEncodingException {
 		RouterLabelFeignInterceptor routerLabelFeignInterceptor = new RouterLabelFeignInterceptor(
 				Collections.singletonList(routerLabelResolver),
-				metadataLocalProperties, routerRuleLabelResolver);
+				staticMetadataManager, routerRuleLabelResolver, polarisContextProperties);
+
+		assertThat(routerLabelFeignInterceptor.getOrder()).isEqualTo(OrderConstant.Client.Feign.ROUTER_LABEL_INTERCEPTOR_ORDER);
 
 		// mock request template
 		RequestTemplate requestTemplate = new RequestTemplate();
@@ -89,17 +95,11 @@ public class RouterLabelFeignInterceptorTest {
 			Map<String, String> transitiveLabels = new HashMap<>();
 			transitiveLabels.put("k1", "v1");
 			transitiveLabels.put("k2", "v22");
-			when(metadataContext.getFragmentContext(MetadataContext.FRAGMENT_TRANSITIVE)).thenReturn(transitiveLabels);
+			when(metadataContext.getTransitiveMetadata()).thenReturn(transitiveLabels);
 
 			// mock MetadataContextHolder#get
 			try (MockedStatic<MetadataContextHolder> mockedMetadataContextHolder = Mockito.mockStatic(MetadataContextHolder.class)) {
 				mockedMetadataContextHolder.when(MetadataContextHolder::get).thenReturn(metadataContext);
-
-				// mock custom resolved labels from request
-				Map<String, String> customResolvedLabels = new HashMap<>();
-				customResolvedLabels.put("k2", "v2");
-				customResolvedLabels.put("k3", "v3");
-				when(routerLabelResolver.resolve(requestTemplate)).thenReturn(customResolvedLabels);
 
 				// mock expression rule labels
 				Set<String> expressionKeys = new HashSet<>();
@@ -108,26 +108,31 @@ public class RouterLabelFeignInterceptorTest {
 				when(routerRuleLabelResolver.getExpressionLabelKeys(MetadataContext.LOCAL_NAMESPACE,
 						MetadataContext.LOCAL_SERVICE, peerService)).thenReturn(expressionKeys);
 
-				// mock local metadata
+				// mock custom resolved labels from request
+				Map<String, String> customResolvedLabels = new HashMap<>();
+				customResolvedLabels.put("k2", "v2");
+				customResolvedLabels.put("k3", "v3");
+				when(routerLabelResolver.resolve(requestTemplate, expressionKeys)).thenReturn(customResolvedLabels);
+
 				Map<String, String> localMetadata = new HashMap<>();
 				localMetadata.put("k3", "v31");
 				localMetadata.put("k4", "v4");
-				when(metadataLocalProperties.getContent()).thenReturn(localMetadata);
+				when(staticMetadataManager.getMergedStaticMetadata()).thenReturn(localMetadata);
 
 				routerLabelFeignInterceptor.apply(requestTemplate);
 
-				Collection<String> routerLabels = requestTemplate.headers().get(RouterConstants.ROUTER_LABEL_HEADER);
+				Collection<String> routerLabels = requestTemplate.headers().get(RouterConstant.ROUTER_LABEL_HEADER);
 
-				Assert.assertNotNull(routerLabels);
+				assertThat(routerLabels).isNotNull();
 				for (String value : routerLabels) {
 					Map<String, String> labels = JacksonUtils.deserialize2Map(URLDecoder.decode(value, "UTF-8"));
 
-					Assert.assertEquals("v1", labels.get("k1"));
-					Assert.assertEquals("v22", labels.get("k2"));
-					Assert.assertEquals("v3", labels.get("k3"));
-					Assert.assertEquals("v4", labels.get("k4"));
-					Assert.assertEquals(headerUidValue, labels.get("${http.header.uid}"));
-					Assert.assertEquals("", labels.get("${http.header.name}"));
+					assertThat(labels.get("k1")).isEqualTo("v1");
+					assertThat(labels.get("k2")).isEqualTo("v22");
+					assertThat(labels.get("k3")).isEqualTo("v3");
+					assertThat(labels.get("k4")).isEqualTo("v4");
+					assertThat(labels.get("${http.header.uid}")).isEqualTo(headerUidValue);
+					assertThat(labels.get("${http.header.name}")).isEqualTo("");
 				}
 			}
 		}

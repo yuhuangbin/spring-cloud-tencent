@@ -18,14 +18,15 @@
 package com.tencent.cloud.polaris.util;
 
 import org.assertj.core.util.Maps;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,8 +36,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Haotian Zhang
  */
-@RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = OkHttpUtilTest.TestApplication.class)
+@ExtendWith(SpringExtension.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = OkHttpUtilTest.TestApplication.class, properties = {"spring.application.name=test", "spring.cloud.polaris.discovery.register=false"})
 public class OkHttpUtilTest {
 
 	@LocalServerPort
@@ -53,8 +54,8 @@ public class OkHttpUtilTest {
 	@RestController
 	static class TestApplication {
 		@GetMapping("/test")
-		public String test() {
-			return "test";
+		public String test(@RequestHeader("key") String key) {
+			return key;
 		}
 	}
 }

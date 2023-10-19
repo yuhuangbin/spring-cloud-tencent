@@ -20,12 +20,11 @@ package com.tencent.cloud.polaris.context;
 
 import java.util.List;
 
-import com.tencent.cloud.common.constant.ContextConstant;
+import com.tencent.cloud.common.constant.OrderConstant;
 import com.tencent.cloud.common.util.AddressUtils;
+import com.tencent.cloud.polaris.context.config.PolarisContextProperties;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
 import org.apache.commons.lang.StringUtils;
-
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Modify polaris server address.
@@ -34,8 +33,11 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class ModifyAddress implements PolarisConfigModifier {
 
-	@Autowired
-	private PolarisContextProperties properties;
+	private final PolarisContextProperties properties;
+
+	public ModifyAddress(PolarisContextProperties properties) {
+		this.properties = properties;
+	}
 
 	@Override
 	public void modify(ConfigurationImpl configuration) {
@@ -50,7 +52,6 @@ public class ModifyAddress implements PolarisConfigModifier {
 
 	@Override
 	public int getOrder() {
-		return ContextConstant.ModifierOrder.FIRST;
+		return OrderConstant.Modifier.ADDRESS_ORDER;
 	}
-
 }

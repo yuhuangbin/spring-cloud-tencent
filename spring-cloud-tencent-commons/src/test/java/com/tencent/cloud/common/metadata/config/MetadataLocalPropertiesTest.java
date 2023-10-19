@@ -18,23 +18,23 @@
 package com.tencent.cloud.common.metadata.config;
 
 import org.assertj.core.api.Assertions;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
  * Test for {@link MetadataLocalProperties}.
  *
  * @author Haotian Zhang
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
 		classes = MetadataLocalPropertiesTest.TestApplication.class,
-		properties = { "spring.config.location = classpath:application-test.yml" })
+		properties = {"spring.config.location = classpath:application-test.yml"})
 public class MetadataLocalPropertiesTest {
 
 	@Autowired
@@ -42,22 +42,24 @@ public class MetadataLocalPropertiesTest {
 
 	@Test
 	public void test1() {
-		Assertions.assertThat(metadataLocalProperties.getContent().get("a"))
-				.isEqualTo("1");
-		Assertions.assertThat(metadataLocalProperties.getContent().get("b"))
-				.isEqualTo("2");
+		Assertions.assertThat(metadataLocalProperties.getContent().get("a")).isEqualTo("1");
+		Assertions.assertThat(metadataLocalProperties.getContent().get("b")).isEqualTo("2");
 		Assertions.assertThat(metadataLocalProperties.getContent().get("c")).isNull();
 	}
 
 	@Test
 	public void test2() {
-		Assertions.assertThat(metadataLocalProperties.getTransitive().contains("b"))
-				.isTrue();
+		Assertions.assertThat(metadataLocalProperties.getTransitive().contains("b")).isTrue();
+	}
+
+	@Test
+	public void test3() {
+		Assertions.assertThat(metadataLocalProperties.getHeaders().contains("c")).isTrue();
+		Assertions.assertThat(metadataLocalProperties.getHeaders().contains("d")).isTrue();
 	}
 
 	@SpringBootApplication
 	protected static class TestApplication {
 
 	}
-
 }

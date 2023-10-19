@@ -20,12 +20,16 @@ package com.tencent.cloud.polaris.router;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
-import org.junit.Assert;
-import org.junit.Test;
+import com.google.common.collect.Sets;
+import com.tencent.cloud.common.constant.RouterConstant;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * test for {@link PolarisRouterContext}
+ * test for {@link PolarisRouterContext}.
  *
  *@author lepdou 2022-05-26
  */
@@ -38,27 +42,75 @@ public class PolarisRouterContextTest {
 		labels.put("k2", "v2");
 
 		PolarisRouterContext routerContext = new PolarisRouterContext();
-		routerContext.setLabels(PolarisRouterContext.RULE_ROUTER_LABELS, labels);
+		routerContext.putLabels(RouterConstant.ROUTER_LABELS, labels);
 
-		Assert.assertEquals(0, routerContext.getLabels(PolarisRouterContext.TRANSITIVE_LABELS).size());
-		Assert.assertEquals(2, routerContext.getLabels(PolarisRouterContext.RULE_ROUTER_LABELS).size());
-		Assert.assertEquals("v1", routerContext.getLabels(PolarisRouterContext.RULE_ROUTER_LABELS).get("k1"));
-		Assert.assertEquals("v2", routerContext.getLabels(PolarisRouterContext.RULE_ROUTER_LABELS).get("k2"));
-		Assert.assertNull(routerContext.getLabels(PolarisRouterContext.RULE_ROUTER_LABELS).get("k3"));
+		assertThat(routerContext.getLabels(RouterConstant.TRANSITIVE_LABELS).size()).isEqualTo(0);
+		assertThat(routerContext.getLabels(RouterConstant.ROUTER_LABELS).size()).isEqualTo(2);
+		assertThat(routerContext.getLabels(RouterConstant.ROUTER_LABELS).get("k1")).isEqualTo("v1");
+		assertThat(routerContext.getLabels(RouterConstant.ROUTER_LABELS).get("k2")).isEqualTo("v2");
+		assertThat(routerContext.getLabels(RouterConstant.ROUTER_LABELS).get("k3")).isNull();
 	}
 
 	@Test
 	public void testSetNull() {
 		PolarisRouterContext routerContext = new PolarisRouterContext();
-		routerContext.setLabels(PolarisRouterContext.RULE_ROUTER_LABELS, null);
-		Assert.assertEquals(0, routerContext.getLabels(PolarisRouterContext.TRANSITIVE_LABELS).size());
-		Assert.assertEquals(0, routerContext.getLabels(PolarisRouterContext.RULE_ROUTER_LABELS).size());
+		routerContext.putLabels(RouterConstant.ROUTER_LABELS, null);
+		assertThat(routerContext.getLabels(RouterConstant.TRANSITIVE_LABELS).size()).isEqualTo(0);
+		assertThat(routerContext.getLabels(RouterConstant.ROUTER_LABELS).size()).isEqualTo(0);
 	}
 
 	@Test
 	public void testGetEmptyRouterContext() {
 		PolarisRouterContext routerContext = new PolarisRouterContext();
-		Assert.assertEquals(0, routerContext.getLabels(PolarisRouterContext.TRANSITIVE_LABELS).size());
-		Assert.assertEquals(0, routerContext.getLabels(PolarisRouterContext.RULE_ROUTER_LABELS).size());
+		assertThat(routerContext.getLabels(RouterConstant.TRANSITIVE_LABELS).size()).isEqualTo(0);
+		assertThat(routerContext.getLabels(RouterConstant.ROUTER_LABELS).size()).isEqualTo(0);
+	}
+
+	@Test
+	public void testGetLabelByKeys() {
+		Map<String, String> labels = new HashMap<>();
+		labels.put("k1", "v1");
+		labels.put("k2", "v2");
+		labels.put("k3", "v3");
+
+		PolarisRouterContext routerContext = new PolarisRouterContext();
+		routerContext.putLabels(RouterConstant.ROUTER_LABELS, labels);
+
+		Map<String, String> resolvedLabels = routerContext.getLabels(RouterConstant.ROUTER_LABELS,
+				Sets.newHashSet("k1", "k2", "k4"));
+
+		assertThat(resolvedLabels.size()).isEqualTo(2);
+		assertThat(resolvedLabels.get("k1")).isEqualTo("v1");
+		assertThat(resolvedLabels.get("k2")).isEqualTo("v2");
+	}
+
+	@Test
+	public void testGetLabel() {
+		Map<String, String> labels = new HashMap<>();
+		labels.put("k1", "v1");
+		labels.put("k2", "v2");
+		labels.put("k3", "v3");
+
+		PolarisRouterContext routerContext = new PolarisRouterContext();
+		routerContext.putLabels(RouterConstant.ROUTER_LABELS, labels);
+
+		String resolvedLabel = routerContext.getLabel("k1");
+		assertThat(resolvedLabel).isEqualTo("v1");
+	}
+
+	@Test
+	public void testGetLabelAsSet() {
+		Map<String, String> labels = new HashMap<>();
+		labels.put("k1", "v1,v2,v3");
+
+		PolarisRouterContext routerContext = new PolarisRouterContext();
+		routerContext.putLabels(RouterConstant.ROUTER_LABELS, labels);
+
+		Set<String> resolvedLabels = routerContext.getLabelAsSet("k1");
+
+		assertThat(resolvedLabels.size()).isEqualTo(3);
+		assertThat(resolvedLabels).contains("v1");
+		assertThat(resolvedLabels).contains("v2");
+		assertThat(resolvedLabels).contains("v3");
 	}
 }

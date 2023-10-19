@@ -17,37 +17,48 @@
 
 package com.tencent.cloud.polaris.registry;
 
+import com.tencent.cloud.common.metadata.MetadataContext;
+import com.tencent.cloud.polaris.PolarisDiscoveryProperties;
+import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.assembly.api.AssemblyAPI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.cloud.client.serviceregistry.AbstractAutoServiceRegistration;
 import org.springframework.cloud.client.serviceregistry.AutoServiceRegistrationProperties;
-import org.springframework.cloud.client.serviceregistry.Registration;
 import org.springframework.cloud.client.serviceregistry.ServiceRegistry;
 import org.springframework.util.StringUtils;
 
 /**
  * Auto service registration of Polaris.
  *
- * @author Haotian Zhang, Andrew Shan, Jie Cheng
+ * @author Haotian Zhang, Andrew Shan, Jie Cheng, changjin wei(魏昌进)
  */
-public class PolarisAutoServiceRegistration extends AbstractAutoServiceRegistration<Registration> {
+public class PolarisAutoServiceRegistration extends AbstractAutoServiceRegistration<PolarisRegistration> {
 
-	private static final Logger log = LoggerFactory.getLogger(PolarisAutoServiceRegistration.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(PolarisAutoServiceRegistration.class);
 
 	private final PolarisRegistration registration;
 
-	public PolarisAutoServiceRegistration(ServiceRegistry<Registration> serviceRegistry,
-			AutoServiceRegistrationProperties autoServiceRegistrationProperties, PolarisRegistration registration) {
+	private final PolarisDiscoveryProperties polarisDiscoveryProperties;
+
+	private final AssemblyAPI assemblyAPI;
+
+	public PolarisAutoServiceRegistration(
+			ServiceRegistry<PolarisRegistration> serviceRegistry,
+			AutoServiceRegistrationProperties autoServiceRegistrationProperties,
+			PolarisRegistration registration,
+			PolarisDiscoveryProperties polarisDiscoveryProperties,
+			AssemblyAPI assemblyAPI
+	) {
 		super(serviceRegistry, autoServiceRegistrationProperties);
 		this.registration = registration;
+		this.polarisDiscoveryProperties = polarisDiscoveryProperties;
+		this.assemblyAPI = assemblyAPI;
 	}
 
 	@Override
 	protected PolarisRegistration getRegistration() {
-		if (this.registration.getPort() <= 0) {
-			this.registration.setPort(this.getPort().get());
-		}
 		return this.registration;
 	}
 
@@ -59,11 +70,11 @@ public class PolarisAutoServiceRegistration extends AbstractAutoServiceRegistrat
 	@Override
 	protected void register() {
 		if (!this.registration.isRegisterEnabled()) {
-			log.debug("Registration disabled.");
+			LOGGER.debug("Registration disabled.");
 			return;
 		}
-		if (this.registration.getPort() <= 0) {
-			this.registration.setPort(getPort().get());
+		if (assemblyAPI != null) {
+			assemblyAPI.initService(new ServiceKey(MetadataContext.LOCAL_NAMESPACE, MetadataContext.LOCAL_SERVICE));
 		}
 		super.register();
 	}
@@ -74,12 +85,27 @@ public class PolarisAutoServiceRegistration extends AbstractAutoServiceRegistrat
 			return;
 		}
 		super.registerManagement();
+	}
 
+	@Override
+	protected void deregister() {
+		if (!this.registration.isRegisterEnabled()) {
+			return;
+		}
+		super.deregister();
+	}
+
+	@Override
+	protected void deregisterManagement() {
+		if (!this.registration.isRegisterEnabled()) {
+			return;
+		}
+		super.deregisterManagement();
 	}
 
 	@Override
 	protected Object getConfiguration() {
-		return this.registration.getPolarisProperties();
+		return this.polarisDiscoveryProperties;
 	}
 
 	@Override
@@ -90,8 +116,7 @@ public class PolarisAutoServiceRegistration extends AbstractAutoServiceRegistrat
 	@Override
 	@SuppressWarnings("deprecation")
 	protected String getAppName() {
-		String appName = registration.getPolarisProperties().getService();
+		String appName = registration.getServiceId();
 		return StringUtils.isEmpty(appName) ? super.getAppName() : appName;
 	}
-
 }

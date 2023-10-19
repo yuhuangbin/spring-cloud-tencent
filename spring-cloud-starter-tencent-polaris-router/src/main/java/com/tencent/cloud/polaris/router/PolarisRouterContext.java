@@ -18,27 +18,25 @@
 
 package com.tencent.cloud.polaris.router;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+
+import com.tencent.cloud.common.constant.RouterConstant;
+import org.apache.commons.lang.StringUtils;
 
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.LinkedCaseInsensitiveMap;
 
 /**
  * the context for router.
  *
- *@author lepdou 2022-05-17
+ * @author lepdou, Hoatian Zhang
  */
 public class PolarisRouterContext {
-
-	/**
-	 * the label for rule router.
-	 */
-	public static final String RULE_ROUTER_LABELS = "ruleRouter";
-	/**
-	 * transitive labels.
-	 */
-	public static final String TRANSITIVE_LABELS = "transitive";
 
 	private Map<String, Map<String, String>> labels;
 
@@ -53,10 +51,62 @@ public class PolarisRouterContext {
 		return Collections.unmodifiableMap(subLabels);
 	}
 
-	public void setLabels(String labelType, Map<String, String> subLabels) {
+	public Map<String, String> getLabels(String labelType, Set<String> labelKeys) {
+		if (CollectionUtils.isEmpty(labelKeys)) {
+			return Collections.emptyMap();
+		}
+
+		Map<String, String> typeLabels = getLabels(labelType);
+		if (CollectionUtils.isEmpty(typeLabels)) {
+			return Collections.emptyMap();
+		}
+
+		Map<String, String> labels = new HashMap<>();
+		for (String key : labelKeys) {
+			String value = typeLabels.get(key);
+			if (StringUtils.isNotBlank(value)) {
+				labels.put(key, value);
+			}
+		}
+		return labels;
+	}
+
+	public String getLabel(String labelKey) {
+		Map<String, String> routerLabels = labels.get(RouterConstant.ROUTER_LABELS);
+		if (CollectionUtils.isEmpty(routerLabels)) {
+			return StringUtils.EMPTY;
+		}
+		return routerLabels.get(labelKey);
+	}
+
+	public Set<String> getLabelAsSet(String labelKey) {
+		Map<String, String> routerLabels = labels.get(RouterConstant.ROUTER_LABELS);
+		if (CollectionUtils.isEmpty(routerLabels)) {
+			return Collections.emptySet();
+		}
+
+		for (Map.Entry<String, String> entry : routerLabels.entrySet()) {
+			if (StringUtils.equalsIgnoreCase(labelKey, entry.getKey())) {
+				String keysStr = entry.getValue();
+				if (StringUtils.isNotBlank(keysStr)) {
+					String[] keysArr = StringUtils.split(keysStr, ",");
+					return new HashSet<>(Arrays.asList(keysArr));
+				}
+			}
+		}
+
+		return Collections.emptySet();
+	}
+
+	public void putLabels(String labelType, Map<String, String> subLabels) {
 		if (this.labels == null) {
 			this.labels = new HashMap<>();
 		}
-		labels.put(labelType, subLabels);
+
+		Map<String, String> subLabelMap = new LinkedCaseInsensitiveMap<>();
+		if (!CollectionUtils.isEmpty(subLabels)) {
+			subLabelMap.putAll(subLabels);
+		}
+		labels.put(labelType, subLabelMap);
 	}
 }

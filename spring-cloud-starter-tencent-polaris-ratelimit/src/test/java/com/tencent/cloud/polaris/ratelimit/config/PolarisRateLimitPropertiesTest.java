@@ -17,14 +17,14 @@
 
 package com.tencent.cloud.polaris.ratelimit.config;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -33,8 +33,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Haotian Zhang
  */
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = PolarisRateLimitPropertiesTest.TestApplication.class)
+@ExtendWith(SpringExtension.class)
+@SpringBootTest(classes = PolarisRateLimitPropertiesTest.TestApplication.class, properties = "spring.application.name=test")
 @ActiveProfiles("test")
 public class PolarisRateLimitPropertiesTest {
 

@@ -18,10 +18,10 @@
 
 package com.tencent.cloud.polaris;
 
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 
 import static com.tencent.polaris.test.common.Consts.NAMESPACE_TEST;
-import static com.tencent.polaris.test.common.Consts.PORT;
 import static com.tencent.polaris.test.common.Consts.PROVIDER_TOKEN;
 import static com.tencent.polaris.test.common.Consts.SERVICE_PROVIDER;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,8 +38,12 @@ public class PolarisDiscoveryPropertiesTest {
 		PolarisDiscoveryProperties polarisDiscoveryProperties = new PolarisDiscoveryProperties();
 
 		// HeartbeatEnabled
-		polarisDiscoveryProperties.setHeartbeatEnabled(true);
-		assertThat(polarisDiscoveryProperties.isHeartbeatEnabled()).isTrue();
+		polarisDiscoveryProperties.setHeartbeatInterval(200);
+		assertThat(polarisDiscoveryProperties.getHeartbeatInterval()).isEqualTo(5);
+		polarisDiscoveryProperties.setHeartbeatInterval(0);
+		assertThat(polarisDiscoveryProperties.getHeartbeatInterval()).isEqualTo(5);
+		polarisDiscoveryProperties.setHeartbeatInterval(20);
+		assertThat(polarisDiscoveryProperties.getHeartbeatInterval()).isEqualTo(20);
 
 		// Namespace
 		polarisDiscoveryProperties.setNamespace(NAMESPACE_TEST);
@@ -73,10 +77,6 @@ public class PolarisDiscoveryPropertiesTest {
 		polarisDiscoveryProperties.setProtocol("HTTP");
 		assertThat(polarisDiscoveryProperties.getProtocol()).isEqualTo("HTTP");
 
-		// Port
-		polarisDiscoveryProperties.setPort(PORT);
-		assertThat(polarisDiscoveryProperties.getPort()).isEqualTo(PORT);
-
 		// HealthCheckUrl
 		polarisDiscoveryProperties.setHealthCheckUrl("/health");
 		assertThat(polarisDiscoveryProperties.getHealthCheckUrl()).isEqualTo("/health");
@@ -85,17 +85,21 @@ public class PolarisDiscoveryPropertiesTest {
 		polarisDiscoveryProperties.setServiceListRefreshInterval(1000L);
 		assertThat(polarisDiscoveryProperties.getServiceListRefreshInterval()).isEqualTo(1000L);
 
+		// InstanceId
+		polarisDiscoveryProperties.setInstanceId("test-ins-id");
+		assertThat(polarisDiscoveryProperties.getInstanceId()).isEqualTo("test-ins-id");
+
 		assertThat(polarisDiscoveryProperties.toString())
 				.isEqualTo("PolarisDiscoveryProperties{"
 						+ "namespace='Test'"
 						+ ", service='java_provider_test'"
+						+ ", instanceId='test-ins-id'"
 						+ ", token='19485a7674294e3c88dba293373c1534'"
 						+ ", weight=10, version='1.0.0'"
 						+ ", protocol='HTTP'"
-						+ ", port=9091"
 						+ ", enabled=true"
 						+ ", registerEnabled=true"
-						+ ", heartbeatEnabled=true"
+						+ ", heartbeatInterval=20"
 						+ ", healthCheckUrl='/health'"
 						+ ", serviceListRefreshInterval=1000}");
 	}

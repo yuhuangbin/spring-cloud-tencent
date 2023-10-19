@@ -18,8 +18,13 @@
 
 package com.tencent.cloud.polaris.router.config;
 
+import java.util.List;
+
+import com.tencent.cloud.polaris.context.PolarisSDKContextManager;
 import com.tencent.cloud.polaris.router.PolarisRouterServiceInstanceListSupplier;
-import com.tencent.polaris.router.api.core.RouterAPI;
+import com.tencent.cloud.polaris.router.spi.RouterRequestInterceptor;
+import com.tencent.cloud.polaris.router.spi.RouterResponseInterceptor;
+import com.tencent.cloud.rpc.enhancement.transformer.InstanceTransformer;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.cloud.client.ConditionalOnBlockingDiscoveryEnabled;
@@ -38,6 +43,7 @@ import org.springframework.core.annotation.Order;
  * @author lepdou 2022-05-17
  */
 @Configuration(proxyBeanMethods = false)
+@ConditionalOnPolarisRouterEnabled
 @ConditionalOnDiscoveryEnabled
 public class LoadBalancerConfiguration {
 
@@ -46,48 +52,44 @@ public class LoadBalancerConfiguration {
 	 */
 	private static final int REACTIVE_SERVICE_INSTANCE_SUPPLIER_ORDER = 193827465;
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnReactiveDiscoveryEnabled
 	@Order(REACTIVE_SERVICE_INSTANCE_SUPPLIER_ORDER)
-	static class PolarisReactiveSupportConfiguration {
+	protected static class PolarisReactiveSupportConfiguration {
 
 		@Bean
 		@ConditionalOnBean(ReactiveDiscoveryClient.class)
 		public ServiceInstanceListSupplier polarisRouterDiscoveryClientServiceInstanceListSupplier(
 				ConfigurableApplicationContext context,
-				RouterAPI routerAPI,
-				PolarisNearByRouterProperties polarisNearByRouterProperties,
-				PolarisMetadataRouterProperties polarisMetadataRouterProperties,
-				PolarisRuleBasedRouterProperties polarisRuleBasedRouterProperties) {
+				PolarisSDKContextManager polarisSDKContextManager, List<RouterRequestInterceptor> requestInterceptors,
+				List<RouterResponseInterceptor> responseInterceptors, InstanceTransformer instanceTransformer) {
 			return new PolarisRouterServiceInstanceListSupplier(
 					ServiceInstanceListSupplier.builder().withDiscoveryClient().build(context),
-					routerAPI,
-					polarisNearByRouterProperties,
-					polarisMetadataRouterProperties,
-					polarisRuleBasedRouterProperties);
+					polarisSDKContextManager.getRouterAPI(),
+					requestInterceptors,
+					responseInterceptors,
+					instanceTransformer);
 		}
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnBlockingDiscoveryEnabled
 	@Order(REACTIVE_SERVICE_INSTANCE_SUPPLIER_ORDER + 1)
-	static class PolarisBlockingSupportConfiguration {
+	protected static class PolarisBlockingSupportConfiguration {
 
 		@Bean
 		@ConditionalOnBean(DiscoveryClient.class)
 		public ServiceInstanceListSupplier polarisRouterDiscoveryClientServiceInstanceListSupplier(
 				ConfigurableApplicationContext context,
-				RouterAPI routerAPI,
-				PolarisNearByRouterProperties polarisNearByRouterProperties,
-				PolarisMetadataRouterProperties polarisMetadataRouterProperties,
-				PolarisRuleBasedRouterProperties polarisRuleBasedRouterProperties) {
+				PolarisSDKContextManager polarisSDKContextManager, List<RouterRequestInterceptor> requestInterceptors,
+				List<RouterResponseInterceptor> responseInterceptors, InstanceTransformer instanceTransformer) {
 			return new PolarisRouterServiceInstanceListSupplier(
 					ServiceInstanceListSupplier.builder().withBlockingDiscoveryClient().build(context),
-					routerAPI,
-					polarisNearByRouterProperties,
-					polarisMetadataRouterProperties,
-					polarisRuleBasedRouterProperties);
+					polarisSDKContextManager.getRouterAPI(),
+					requestInterceptors,
+					responseInterceptors,
+					instanceTransformer);
 		}
 	}
 }

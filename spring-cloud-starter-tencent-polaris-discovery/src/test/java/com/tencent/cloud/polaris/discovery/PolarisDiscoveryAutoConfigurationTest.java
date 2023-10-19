@@ -19,18 +19,17 @@
 package com.tencent.cloud.polaris.discovery;
 
 import com.tencent.cloud.polaris.PolarisDiscoveryProperties;
-import com.tencent.cloud.polaris.context.PolarisContextAutoConfiguration;
-import com.tencent.polaris.api.core.ConsumerAPI;
-import com.tencent.polaris.api.core.ProviderAPI;
+import com.tencent.cloud.polaris.context.PolarisSDKContextManager;
+import com.tencent.cloud.polaris.context.config.PolarisContextAutoConfiguration;
 import com.tencent.polaris.test.mock.discovery.NamingServer;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
-import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Configuration;
 
 import static com.tencent.polaris.test.common.Consts.PORT;
@@ -46,30 +45,36 @@ public class PolarisDiscoveryAutoConfigurationTest {
 
 	private static NamingServer namingServer;
 
-	private WebApplicationContextRunner contextRunner = new WebApplicationContextRunner()
-			.withConfiguration(AutoConfigurations.of(PolarisContextAutoConfiguration.class,
-					PolarisDiscoveryAutoConfiguration.class, PolarisDiscoveryClientConfiguration.class,
+	private final WebApplicationContextRunner contextRunner = new WebApplicationContextRunner()
+			.withConfiguration(AutoConfigurations.of(
+					PolarisContextAutoConfiguration.class,
+					PolarisDiscoveryAutoConfiguration.class,
+					PolarisDiscoveryClientConfiguration.class,
 					PolarisContextAutoConfiguration.class))
-			.withPropertyValues("spring.application.name=" + SERVICE_PROVIDER).withPropertyValues("server.port=" + PORT)
+			.withPropertyValues("spring.application.name=" + SERVICE_PROVIDER)
+			.withPropertyValues("server.port=" + PORT)
 			.withPropertyValues("spring.cloud.polaris.address=grpc://127.0.0.1:10081");
 
-	@BeforeClass
-	public static void beforeClass() throws Exception {
+	@BeforeAll
+	static void beforeAll() throws Exception {
 		namingServer = NamingServer.startNamingServer(10081);
 	}
 
-	@AfterClass
-	public static void afterClass() throws Exception {
+	@AfterAll
+	static void afterAll() {
 		if (null != namingServer) {
 			namingServer.terminate();
 		}
 	}
 
+	@BeforeEach
+	void setUp() {
+		PolarisSDKContextManager.innerDestroy();
+	}
+
 	@Test
 	public void testDefaultInitialization() {
 		this.contextRunner.run(context -> {
-			assertThat(context).hasSingleBean(ProviderAPI.class);
-			assertThat(context).hasSingleBean(ConsumerAPI.class);
 			assertThat(context).hasSingleBean(PolarisDiscoveryProperties.class);
 			assertThat(context).hasSingleBean(PolarisServiceDiscovery.class);
 		});
@@ -77,9 +82,7 @@ public class PolarisDiscoveryAutoConfigurationTest {
 
 	@Configuration
 	@EnableAutoConfiguration
-	@EnableDiscoveryClient
 	static class PolarisDiscoveryAutoConfiguration {
 
 	}
-
 }

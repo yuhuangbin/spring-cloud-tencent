@@ -19,15 +19,20 @@
 package com.tencent.cloud.polaris.config;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import com.tencent.cloud.common.constant.ContextConstant;
+import com.tencent.cloud.common.constant.OrderConstant;
 import com.tencent.cloud.common.util.AddressUtils;
 import com.tencent.cloud.polaris.config.config.PolarisConfigProperties;
+import com.tencent.cloud.polaris.config.config.PolarisCryptoConfigProperties;
 import com.tencent.cloud.polaris.context.PolarisConfigModifier;
-import com.tencent.cloud.polaris.context.PolarisContextProperties;
+import com.tencent.cloud.polaris.context.config.PolarisContextProperties;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
+import com.tencent.polaris.factory.config.configuration.ConfigFilterConfigImpl;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.util.CollectionUtils;
 
@@ -38,19 +43,55 @@ import org.springframework.util.CollectionUtils;
  * @author lepdou 2022-03-10
  */
 public class ConfigurationModifier implements PolarisConfigModifier {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationModifier.class);
+
+	private static final String DATA_SOURCE_POLARIS = "polaris";
+	private static final String DATA_SOURCE_LOCAL = "local";
 
 	private final PolarisConfigProperties polarisConfigProperties;
+
+	private final PolarisCryptoConfigProperties polarisCryptoConfigProperties;
 
 	private final PolarisContextProperties polarisContextProperties;
 
 	public ConfigurationModifier(PolarisConfigProperties polarisConfigProperties,
+			PolarisCryptoConfigProperties polarisCryptoConfigProperties,
 			PolarisContextProperties polarisContextProperties) {
 		this.polarisConfigProperties = polarisConfigProperties;
+		this.polarisCryptoConfigProperties = polarisCryptoConfigProperties;
 		this.polarisContextProperties = polarisContextProperties;
 	}
 
 	@Override
 	public void modify(ConfigurationImpl configuration) {
+		if (StringUtils.equalsIgnoreCase(polarisConfigProperties.getDataSource(), DATA_SOURCE_POLARIS)) {
+			initByPolarisDataSource(configuration);
+		}
+		else if (StringUtils.equalsIgnoreCase(polarisConfigProperties.getDataSource(), DATA_SOURCE_LOCAL)) {
+			initByLocalDataSource(configuration);
+		}
+		else {
+			throw new RuntimeException("Unsupported config data source");
+		}
+
+		ConfigFilterConfigImpl configFilterConfig = configuration.getConfigFile().getConfigFilterConfig();
+		configFilterConfig.setEnable(polarisCryptoConfigProperties.isEnabled());
+		if (polarisCryptoConfigProperties.isEnabled()) {
+			configFilterConfig.getChain().add("crypto");
+			configFilterConfig.getPlugin().put("crypto", Collections.singletonMap("type", "AES"));
+		}
+	}
+
+	private void initByLocalDataSource(ConfigurationImpl configuration) {
+		configuration.getConfigFile().getServerConnector().setConnectorType("localFile");
+
+		String localFileRootPath = polarisConfigProperties.getLocalFileRootPath();
+		configuration.getConfigFile().getServerConnector().setPersistDir(localFileRootPath);
+
+		LOGGER.info("[SCT] Run spring cloud tencent config with local data source. localFileRootPath = {}", localFileRootPath);
+	}
+
+	private void initByPolarisDataSource(ConfigurationImpl configuration) {
 		// set connector type
 		configuration.getConfigFile().getServerConnector().setConnectorType("polaris");
 
@@ -70,12 +111,16 @@ public class ConfigurationModifier implements PolarisConfigModifier {
 					+ " with spring.cloud.polaris.address or spring.cloud.polaris.config.address");
 		}
 
+		checkAddressAccessible(configAddresses);
+
 		configuration.getConfigFile().getServerConnector().setAddresses(configAddresses);
+
+		LOGGER.info("[SCT] Run spring cloud tencent config in polaris data source.");
 	}
 
 	@Override
 	public int getOrder() {
-		return ContextConstant.ModifierOrder.CONFIG_ORDER;
+		return OrderConstant.Modifier.CONFIG_ORDER;
 	}
 
 	/**
@@ -97,5 +142,27 @@ public class ConfigurationModifier implements PolarisConfigModifier {
 		}
 
 		return configAddresses;
+	}
+
+	private void checkAddressAccessible(List<String> configAddresses) {
+		// check address can connect
+		configAddresses.forEach(address -> {
+			String[] ipPort = address.split(":");
+
+			if (ipPort.length != 2) {
+				throw new IllegalArgumentException("Config server address (" + address + ") is wrong, please check address like grpc://183.47.111.8:8091.");
+			}
+
+			if (!AddressUtils.accessible(ipPort[0], Integer.parseInt(ipPort[1]), 3000)) {
+				String errMsg = "Config server address (" + address + ") can not be connected. Please check your config in bootstrap.yml"
+						+ " with spring.cloud.polaris.address or spring.cloud.polaris.config.address.";
+				if (polarisConfigProperties.isShutdownIfConnectToConfigServerFailed()) {
+					throw new IllegalArgumentException(errMsg);
+				}
+				else {
+					LOGGER.error(errMsg);
+				}
+			}
+		});
 	}
 }

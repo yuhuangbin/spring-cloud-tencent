@@ -20,11 +20,16 @@ package com.tencent.cloud.common.metadata;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import com.tencent.cloud.common.metadata.config.MetadataLocalProperties;
 import com.tencent.cloud.common.util.ApplicationContextAwareUtils;
 
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+
+import static com.tencent.cloud.common.metadata.MetadataContext.FRAGMENT_DISPOSABLE;
+import static com.tencent.cloud.common.metadata.MetadataContext.FRAGMENT_UPSTREAM_DISPOSABLE;
 
 /**
  * Metadata Context Holder.
@@ -36,6 +41,7 @@ public final class MetadataContextHolder {
 	private static final ThreadLocal<MetadataContext> METADATA_CONTEXT = new InheritableThreadLocal<>();
 
 	private static MetadataLocalProperties metadataLocalProperties;
+
 	private static StaticMetadataManager staticMetadataManager;
 
 	private MetadataContextHolder() {
@@ -51,22 +57,57 @@ public final class MetadataContextHolder {
 		}
 
 		if (metadataLocalProperties == null) {
-			metadataLocalProperties = (MetadataLocalProperties) ApplicationContextAwareUtils
-					.getApplicationContext().getBean("metadataLocalProperties");
+			metadataLocalProperties = ApplicationContextAwareUtils.getApplicationContext().getBean(MetadataLocalProperties.class);
 		}
 		if (staticMetadataManager == null) {
-			staticMetadataManager = (StaticMetadataManager) ApplicationContextAwareUtils
-					.getApplicationContext().getBean("metadataManager");
+			staticMetadataManager = ApplicationContextAwareUtils.getApplicationContext().getBean(StaticMetadataManager.class);
 		}
 
 		// init static transitive metadata
 		MetadataContext metadataContext = new MetadataContext();
-		metadataContext.putFragmentContext(MetadataContext.FRAGMENT_TRANSITIVE,
-				staticMetadataManager.getMergedStaticTransitiveMetadata());
+		metadataContext.setTransitiveMetadata(staticMetadataManager.getMergedStaticTransitiveMetadata());
+		metadataContext.setDisposableMetadata(staticMetadataManager.getMergedStaticDisposableMetadata());
+
+		if (StringUtils.hasText(staticMetadataManager.getTransHeader())) {
+			metadataContext.setTransHeaders(staticMetadataManager.getTransHeader(), "");
+		}
 
 		METADATA_CONTEXT.set(metadataContext);
 
 		return METADATA_CONTEXT.get();
+	}
+
+	/**
+	 * Get disposable metadata value from thread local .
+	 * @param key metadata key .
+	 * @param upstream upstream disposable , otherwise will return local static disposable metadata .
+	 * @return target disposable metadata value .
+	 */
+	public static Optional<String> getDisposableMetadata(String key, boolean upstream) {
+		MetadataContext context = get();
+		if (upstream) {
+			return Optional.ofNullable(context.getContext(FRAGMENT_UPSTREAM_DISPOSABLE, key));
+		}
+		else {
+			return Optional.ofNullable(context.getContext(FRAGMENT_DISPOSABLE, key));
+		}
+	}
+
+	/**
+	 * Get all disposable metadata value from thread local .
+	 * @param upstream upstream disposable , otherwise will return local static disposable metadata .
+	 * @return target disposable metadata value .
+	 */
+	public static Map<String, String> getAllDisposableMetadata(boolean upstream) {
+		Map<String, String> disposables = new HashMap<>();
+		MetadataContext context = get();
+		if (upstream) {
+			disposables.putAll(context.getFragmentContext(FRAGMENT_UPSTREAM_DISPOSABLE));
+		}
+		else {
+			disposables.putAll(context.getFragmentContext(FRAGMENT_DISPOSABLE));
+		}
+		return Collections.unmodifiableMap(disposables);
 	}
 
 	/**
@@ -80,22 +121,27 @@ public final class MetadataContextHolder {
 	/**
 	 * Save metadata map to thread local.
 	 * @param dynamicTransitiveMetadata custom metadata collection
+	 * @param dynamicDisposableMetadata custom disposable metadata connection
 	 */
-	public static void init(Map<String, String> dynamicTransitiveMetadata) {
+	public static void init(Map<String, String> dynamicTransitiveMetadata, Map<String, String> dynamicDisposableMetadata) {
 		// Init ThreadLocal.
 		MetadataContextHolder.remove();
 		MetadataContext metadataContext = MetadataContextHolder.get();
 
 		// Save transitive metadata to ThreadLocal.
 		if (!CollectionUtils.isEmpty(dynamicTransitiveMetadata)) {
-			Map<String, String> staticTransitiveMetadata = metadataContext.getFragmentContext(MetadataContext.FRAGMENT_TRANSITIVE);
+			Map<String, String> staticTransitiveMetadata = metadataContext.getTransitiveMetadata();
 			Map<String, String> mergedTransitiveMetadata = new HashMap<>();
 			mergedTransitiveMetadata.putAll(staticTransitiveMetadata);
 			mergedTransitiveMetadata.putAll(dynamicTransitiveMetadata);
-
-			metadataContext.putFragmentContext(MetadataContext.FRAGMENT_TRANSITIVE,
-					Collections.unmodifiableMap(mergedTransitiveMetadata));
+			metadataContext.setTransitiveMetadata(Collections.unmodifiableMap(mergedTransitiveMetadata));
 		}
+		if (!CollectionUtils.isEmpty(dynamicDisposableMetadata)) {
+			Map<String, String> mergedUpstreamDisposableMetadata = new HashMap<>(dynamicDisposableMetadata);
+			metadataContext.setUpstreamDisposableMetadata(Collections.unmodifiableMap(mergedUpstreamDisposableMetadata));
+		}
+		Map<String, String> staticDisposableMetadata = metadataContext.getDisposableMetadata();
+		metadataContext.setDisposableMetadata(Collections.unmodifiableMap(staticDisposableMetadata));
 		MetadataContextHolder.set(metadataContext);
 	}
 
@@ -105,5 +151,4 @@ public final class MetadataContextHolder {
 	public static void remove() {
 		METADATA_CONTEXT.remove();
 	}
-
 }

@@ -17,28 +17,26 @@
 
 package com.tencent.cloud.polaris.discovery.reactive;
 
-import com.tencent.cloud.polaris.discovery.PolarisDiscoveryAutoConfiguration;
 import com.tencent.cloud.polaris.discovery.PolarisServiceDiscovery;
 
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.client.ConditionalOnDiscoveryHealthIndicatorEnabled;
 import org.springframework.cloud.client.ConditionalOnReactiveDiscoveryEnabled;
-import org.springframework.cloud.client.ReactiveCommonsClientAutoConfiguration;
-import org.springframework.cloud.client.discovery.composite.reactive.ReactiveCompositeDiscoveryClientAutoConfiguration;
+import org.springframework.cloud.client.discovery.health.DiscoveryClientHealthIndicatorProperties;
+import org.springframework.cloud.client.discovery.health.reactive.ReactiveDiscoveryClientHealthIndicator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
  * Reactive Discovery Client Configuration for Polaris.
  *
- * @author Haotian Zhang, Andrew Shan, Jie Cheng
+ * @author Haotian Zhang, Andrew Shan, Jie Cheng, youta
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnReactiveDiscoveryEnabled
-@AutoConfigureAfter({ PolarisDiscoveryAutoConfiguration.class,
-		ReactiveCompositeDiscoveryClientAutoConfiguration.class })
-@AutoConfigureBefore({ ReactiveCommonsClientAutoConfiguration.class })
+@EnableConfigurationProperties(DiscoveryClientHealthIndicatorProperties.class)
 public class PolarisReactiveDiscoveryClientConfiguration {
 
 	@Bean
@@ -48,4 +46,11 @@ public class PolarisReactiveDiscoveryClientConfiguration {
 		return new PolarisReactiveDiscoveryClient(polarisServiceDiscovery);
 	}
 
+	@Bean
+	@ConditionalOnClass(name = "org.springframework.boot.actuate.health.ReactiveHealthIndicator")
+	@ConditionalOnDiscoveryHealthIndicatorEnabled
+	public ReactiveDiscoveryClientHealthIndicator polarisReactiveDiscoveryClientHealthIndicator(
+			PolarisReactiveDiscoveryClient client, DiscoveryClientHealthIndicatorProperties properties) {
+		return new ReactiveDiscoveryClientHealthIndicator(client, properties);
+	}
 }

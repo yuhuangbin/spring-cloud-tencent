@@ -23,7 +23,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Map;
 
-import com.tencent.cloud.common.constant.MetadataConstant;
+import com.tencent.cloud.common.constant.OrderConstant;
 import com.tencent.cloud.common.metadata.MetadataContext;
 import com.tencent.cloud.common.metadata.MetadataContextHolder;
 import com.tencent.cloud.common.util.JacksonUtils;
@@ -33,7 +33,12 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.lang.NonNull;
 import org.springframework.util.CollectionUtils;
+
+import static com.tencent.cloud.common.constant.ContextConstant.UTF_8;
+import static com.tencent.cloud.common.constant.MetadataConstant.HeaderName.CUSTOM_DISPOSABLE_METADATA;
+import static com.tencent.cloud.common.constant.MetadataConstant.HeaderName.CUSTOM_METADATA;
 
 /**
  * Interceptor used for adding the metadata in http headers from context when web client
@@ -45,27 +50,54 @@ public class EncodeTransferMedataRestTemplateInterceptor implements ClientHttpRe
 
 	@Override
 	public int getOrder() {
-		return MetadataConstant.OrderConstant.METADATA_2_HEADER_INTERCEPTOR_ORDER;
+		return OrderConstant.Client.RestTemplate.ENCODE_TRANSFER_METADATA_INTERCEPTOR_ORDER;
 	}
 
 	@Override
-	public ClientHttpResponse intercept(HttpRequest httpRequest, byte[] bytes,
-			ClientHttpRequestExecution clientHttpRequestExecution) throws IOException {
+	public ClientHttpResponse intercept(@NonNull HttpRequest httpRequest, @NonNull byte[] bytes,
+			@NonNull ClientHttpRequestExecution clientHttpRequestExecution) throws IOException {
 		// get metadata of current thread
 		MetadataContext metadataContext = MetadataContextHolder.get();
-		Map<String, String> customMetadata = metadataContext.getFragmentContext(MetadataContext.FRAGMENT_TRANSITIVE);
+		Map<String, String> customMetadata = metadataContext.getCustomMetadata();
+		Map<String, String> disposableMetadata = metadataContext.getDisposableMetadata();
+		Map<String, String> transHeaders = metadataContext.getTransHeadersKV();
 
-		if (!CollectionUtils.isEmpty(customMetadata)) {
-			String encodedTransitiveMetadata = JacksonUtils.serialize2Json(customMetadata);
-			try {
-				httpRequest.getHeaders().set(MetadataConstant.HeaderName.CUSTOM_METADATA,
-						URLEncoder.encode(encodedTransitiveMetadata, "UTF-8"));
-			}
-			catch (UnsupportedEncodingException e) {
-				httpRequest.getHeaders().set(MetadataConstant.HeaderName.CUSTOM_METADATA, encodedTransitiveMetadata);
-			}
-		}
+		// build custom disposable metadata request header
+		this.buildMetadataHeader(httpRequest, disposableMetadata, CUSTOM_DISPOSABLE_METADATA);
+
+		// build custom metadata request header
+		this.buildMetadataHeader(httpRequest, customMetadata, CUSTOM_METADATA);
+
+		// set headers that need to be transmitted from the upstream
+		this.buildTransmittedHeader(httpRequest, transHeaders);
+
 		return clientHttpRequestExecution.execute(httpRequest, bytes);
 	}
 
+	private void buildTransmittedHeader(HttpRequest request, Map<String, String> transHeaders) {
+		if (!CollectionUtils.isEmpty(transHeaders)) {
+			transHeaders.entrySet().stream().forEach(entry -> {
+				request.getHeaders().set(entry.getKey(), entry.getValue());
+			});
+		}
+	}
+
+	/**
+	 * Set metadata into the request header for {@link HttpRequest} .
+	 *
+	 * @param request    instance of {@link HttpRequest}
+	 * @param metadata   metadata map .
+	 * @param headerName target metadata http header name .
+	 */
+	private void buildMetadataHeader(HttpRequest request, Map<String, String> metadata, String headerName) {
+		if (!CollectionUtils.isEmpty(metadata)) {
+			String encodedMetadata = JacksonUtils.serialize2Json(metadata);
+			try {
+				request.getHeaders().set(headerName, URLEncoder.encode(encodedMetadata, UTF_8));
+			}
+			catch (UnsupportedEncodingException e) {
+				request.getHeaders().set(headerName, encodedMetadata);
+			}
+		}
+	}
 }

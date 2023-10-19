@@ -18,9 +18,10 @@
 
 package com.tencent.cloud.common.metadata.config;
 
-import com.tencent.cloud.common.metadata.filter.gateway.MetadataFirstScgFilter;
+
+import com.tencent.cloud.common.util.ApplicationContextAwareUtils;
 import org.assertj.core.api.Assertions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -34,11 +35,17 @@ import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
  */
 public class MetadataAutoConfigurationTest {
 
-	private final ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner();
+	private final ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner().withPropertyValues(
+			"spring.application.name=test"
+	);
 
-	private final WebApplicationContextRunner webApplicationContextRunner = new WebApplicationContextRunner();
+	private final WebApplicationContextRunner webApplicationContextRunner = new WebApplicationContextRunner().withPropertyValues(
+			"spring.application.name=test"
+	);
 
-	private final ReactiveWebApplicationContextRunner reactiveWebApplicationContextRunner = new ReactiveWebApplicationContextRunner();
+	private final ReactiveWebApplicationContextRunner reactiveWebApplicationContextRunner = new ReactiveWebApplicationContextRunner().withPropertyValues(
+			"spring.application.name=test"
+	);
 
 	/**
 	 * No any web application.
@@ -46,12 +53,9 @@ public class MetadataAutoConfigurationTest {
 	@Test
 	public void test1() {
 		this.applicationContextRunner
-				.withConfiguration(AutoConfigurations.of(MetadataAutoConfiguration.class))
+				.withConfiguration(AutoConfigurations.of(MetadataAutoConfiguration.class, ApplicationContextAwareUtils.class))
 				.run(context -> {
 					Assertions.assertThat(context).hasSingleBean(MetadataLocalProperties.class);
-					Assertions.assertThat(context).hasSingleBean(
-							MetadataAutoConfiguration.MetadataScgFilterConfig.class);
-					Assertions.assertThat(context).hasSingleBean(MetadataFirstScgFilter.class);
 				});
 	}
 
@@ -61,12 +65,9 @@ public class MetadataAutoConfigurationTest {
 	@Test
 	public void test2() {
 		this.webApplicationContextRunner
-				.withConfiguration(AutoConfigurations.of(MetadataAutoConfiguration.class))
+				.withConfiguration(AutoConfigurations.of(MetadataAutoConfiguration.class, ApplicationContextAwareUtils.class))
 				.run(context -> {
 					Assertions.assertThat(context).hasSingleBean(MetadataLocalProperties.class);
-					Assertions.assertThat(context).hasSingleBean(
-							MetadataAutoConfiguration.MetadataScgFilterConfig.class);
-					Assertions.assertThat(context).hasSingleBean(MetadataFirstScgFilter.class);
 				});
 	}
 
@@ -76,13 +77,9 @@ public class MetadataAutoConfigurationTest {
 	@Test
 	public void test3() {
 		this.reactiveWebApplicationContextRunner
-				.withConfiguration(AutoConfigurations.of(MetadataAutoConfiguration.class))
+				.withConfiguration(AutoConfigurations.of(MetadataAutoConfiguration.class, ApplicationContextAwareUtils.class))
 				.run(context -> {
 					Assertions.assertThat(context).hasSingleBean(MetadataLocalProperties.class);
-					Assertions.assertThat(context).hasSingleBean(
-							MetadataAutoConfiguration.MetadataScgFilterConfig.class);
-					Assertions.assertThat(context).hasSingleBean(MetadataFirstScgFilter.class);
 				});
 	}
-
 }

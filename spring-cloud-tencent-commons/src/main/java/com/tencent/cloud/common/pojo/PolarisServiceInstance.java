@@ -19,6 +19,7 @@ package com.tencent.cloud.common.pojo;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.Objects;
 
 import com.tencent.polaris.api.pojo.Instance;
 import org.apache.commons.lang.StringUtils;
@@ -29,7 +30,7 @@ import org.springframework.cloud.client.ServiceInstance;
 /**
  * Polaris's implementation of {@link ServiceInstance}.
  *
- * @author Haotian Zhang
+ * @author Haotian Zhang, changjin wei(魏昌进)
  */
 public class PolarisServiceInstance implements ServiceInstance {
 
@@ -56,7 +57,7 @@ public class PolarisServiceInstance implements ServiceInstance {
 
 	@Override
 	public String getInstanceId() {
-		return ServiceInstance.super.getInstanceId();
+		return instance.getId();
 	}
 
 	@Override
@@ -94,4 +95,25 @@ public class PolarisServiceInstance implements ServiceInstance {
 		return this.scheme;
 	}
 
+	/**
+	 * To fix loadbalancer not working bug when importing spring-retry.
+	 * @param o object
+	 * @return if equals
+	 */
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		PolarisServiceInstance that = (PolarisServiceInstance) o;
+		return Objects.equals(instance, that.instance) && Objects.equals(scheme, that.scheme);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(instance, scheme);
+	}
 }

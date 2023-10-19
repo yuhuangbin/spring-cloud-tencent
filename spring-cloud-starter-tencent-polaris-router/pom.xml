@@ -17,7 +17,7 @@
 		<!-- Spring Cloud Tencent dependencies start -->
 		<dependency>
 			<groupId>com.tencent.cloud</groupId>
-			<artifactId>spring-cloud-tencent-polaris-loadbalancer</artifactId>
+			<artifactId>spring-cloud-tencent-rpc-enhancement</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.tencent.cloud</groupId>
@@ -29,6 +29,12 @@
 		<dependency>
 			<groupId>com.tencent.polaris</groupId>
 			<artifactId>router-rule</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>junit</groupId>
+					<artifactId>junit</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>com.tencent.polaris</groupId>
@@ -49,6 +55,32 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
+			<optional>true</optional>
+		</dependency>
+
+		<!-- spring cloud gateway dependencies start -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-gateway-server</artifactId>
+			<optional>true</optional>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<!-- spring cloud gateway dependencies end -->
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-actuator</artifactId>
+			<optional>true</optional>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-actuator-autoconfigure</artifactId>
 			<optional>true</optional>
 		</dependency>
 

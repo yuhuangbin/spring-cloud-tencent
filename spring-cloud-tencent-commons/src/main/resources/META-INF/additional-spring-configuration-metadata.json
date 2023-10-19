@@ -9,6 +9,16 @@
       "name": "spring.cloud.tencent.metadata.transitive",
       "type": "java.util.List",
       "description": "Custom transitive metadata key list."
+    },
+    {
+      "name": "spring.cloud.tencent.metadata.disposable",
+      "type": "java.util.List",
+      "description": "Custom disposable metadata key list."
+    },
+    {
+      "name": "spring.cloud.tencent.metadata.headers",
+      "type": "java.util.List",
+      "description": "Custom transitive http header key list."
     }
   ]
 }

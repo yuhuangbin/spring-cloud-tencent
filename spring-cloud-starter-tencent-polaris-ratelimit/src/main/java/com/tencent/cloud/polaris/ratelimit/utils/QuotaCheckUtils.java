@@ -14,12 +14,15 @@
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
+
 package com.tencent.cloud.polaris.ratelimit.utils;
 
 import java.util.Map;
+import java.util.Set;
 
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
+import com.tencent.polaris.ratelimit.api.rpc.Argument;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import org.slf4j.Logger;
@@ -37,6 +40,7 @@ public final class QuotaCheckUtils {
 	private QuotaCheckUtils() {
 	}
 
+	@Deprecated
 	public static QuotaResponse getQuota(LimitAPI limitAPI, String namespace, String service, int count,
 			Map<String, String> labels, String method) {
 		// build quota request
@@ -56,4 +60,22 @@ public final class QuotaCheckUtils {
 		}
 	}
 
+	public static QuotaResponse getQuota(LimitAPI limitAPI, String namespace, String service, int count,
+			Set<Argument> arguments, String method) {
+		// build quota request
+		QuotaRequest quotaRequest = new QuotaRequest();
+		quotaRequest.setNamespace(namespace);
+		quotaRequest.setService(service);
+		quotaRequest.setCount(count);
+		quotaRequest.setArguments(arguments);
+		quotaRequest.setMethod(method);
+
+		try {
+			return limitAPI.getQuota(quotaRequest);
+		}
+		catch (Throwable throwable) {
+			LOG.error("fail to invoke getQuota of LimitAPI with QuotaRequest[{}].", quotaRequest, throwable);
+			return new QuotaResponse(new QuotaResult(QuotaResult.Code.QuotaResultOk, 0, "get quota failed"));
+		}
+	}
 }

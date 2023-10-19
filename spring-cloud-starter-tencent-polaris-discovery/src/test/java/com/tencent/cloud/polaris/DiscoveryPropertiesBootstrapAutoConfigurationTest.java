@@ -17,8 +17,8 @@
 
 package com.tencent.cloud.polaris;
 
-import com.tencent.cloud.polaris.context.PolarisContextAutoConfiguration;
-import org.junit.Test;
+import com.tencent.cloud.polaris.context.config.PolarisContextAutoConfiguration;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -35,7 +35,8 @@ public class DiscoveryPropertiesBootstrapAutoConfigurationTest {
 	@Test
 	public void testDefaultInitialization() {
 		ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner().withConfiguration(
-						AutoConfigurations.of(PolarisContextAutoConfiguration.class,
+						AutoConfigurations.of(
+								PolarisContextAutoConfiguration.class,
 								DiscoveryPropertiesBootstrapAutoConfiguration.class))
 				.withPropertyValues("spring.cloud.polaris.enabled=true");
 		applicationContextRunner.run(context -> {

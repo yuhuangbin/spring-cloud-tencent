@@ -19,7 +19,11 @@ package com.tencent.cloud.polaris.config.config;
 
 import java.util.List;
 
+import com.tencent.cloud.polaris.config.enums.RefreshType;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+
 
 /**
  * polaris config module bootstrap configs.
@@ -28,32 +32,62 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @ConfigurationProperties("spring.cloud.polaris.config")
 public class PolarisConfigProperties {
-
 	/**
 	 * Whether to open the configuration center.
 	 */
+	@Value("${spring.cloud.polaris.config.enabled:#{'true'}}")
 	private boolean enabled = true;
 
 	/**
 	 * Configuration center service address list.
 	 */
+	@Value("${spring.cloud.polaris.config.address:}")
 	private String address;
 
 	/**
 	 * Polaris config grpc port.
 	 */
+	@Value("${spring.cloud.polaris.config.port:#{'8093'}}")
 	private int port = 8093;
 
 	/**
 	 * Whether to automatically update to the spring context when the configuration file.
 	 * is updated
 	 */
+	@Value("${spring.cloud.polaris.config.autoRefresh:#{'true'}}")
 	private boolean autoRefresh = true;
+
+	private boolean shutdownIfConnectToConfigServerFailed = true;
+
+	/**
+	 * When the local configuration is consistent with the remote configuration, whether to
+	 * preferentially load the remote configuration.
+	 */
+	private boolean preference = true;
+
+	/**
+	 * Attribute refresh type.
+	 */
+	private RefreshType refreshType = RefreshType.REFLECT;
 
 	/**
 	 * List of injected configuration files.
 	 */
 	private List<ConfigFileGroup> groups;
+
+	/**
+	 * Where to load config file. default is polaris.
+	 * <br>
+	 * polaris: load from polaris server.
+	 * <br>
+	 * local: load from local file system.
+	 */
+	private String dataSource = "polaris";
+
+	/**
+	 * The root path of config files, only used in local mode.
+	 */
+	private String localFileRootPath = "./polaris/backup/config";
 
 	public boolean isEnabled() {
 		return enabled;
@@ -87,6 +121,22 @@ public class PolarisConfigProperties {
 		this.autoRefresh = autoRefresh;
 	}
 
+	public boolean isShutdownIfConnectToConfigServerFailed() {
+		return shutdownIfConnectToConfigServerFailed;
+	}
+
+	public void setShutdownIfConnectToConfigServerFailed(boolean shutdownIfConnectToConfigServerFailed) {
+		this.shutdownIfConnectToConfigServerFailed = shutdownIfConnectToConfigServerFailed;
+	}
+
+	public RefreshType getRefreshType() {
+		return refreshType;
+	}
+
+	public void setRefreshType(RefreshType refreshType) {
+		this.refreshType = refreshType;
+	}
+
 	public List<ConfigFileGroup> getGroups() {
 		return groups;
 	}
@@ -95,4 +145,27 @@ public class PolarisConfigProperties {
 		this.groups = groups;
 	}
 
+	public boolean isPreference() {
+		return preference;
+	}
+
+	public void setPreference(boolean preference) {
+		this.preference = preference;
+	}
+
+	public String getDataSource() {
+		return dataSource;
+	}
+
+	public void setDataSource(String dataSource) {
+		this.dataSource = dataSource;
+	}
+
+	public String getLocalFileRootPath() {
+		return localFileRootPath;
+	}
+
+	public void setLocalFileRootPath(String localFileRootPath) {
+		this.localFileRootPath = localFileRootPath;
+	}
 }

@@ -18,28 +18,28 @@
 
 package com.tencent.cloud.polaris.ratelimit.config;
 
-import com.tencent.cloud.polaris.context.ConditionalOnPolarisEnabled;
-import com.tencent.cloud.polaris.context.PolarisContextAutoConfiguration;
+import com.tencent.cloud.common.constant.OrderConstant;
+import com.tencent.cloud.polaris.context.PolarisSDKContextManager;
 import com.tencent.cloud.polaris.context.ServiceRuleManager;
-import com.tencent.cloud.polaris.ratelimit.RateLimitRuleLabelResolver;
-import com.tencent.cloud.polaris.ratelimit.constant.RateLimitConstant;
+import com.tencent.cloud.polaris.context.config.PolarisContextAutoConfiguration;
 import com.tencent.cloud.polaris.ratelimit.filter.QuotaCheckReactiveFilter;
 import com.tencent.cloud.polaris.ratelimit.filter.QuotaCheckServletFilter;
+import com.tencent.cloud.polaris.ratelimit.resolver.RateLimitRuleArgumentReactiveResolver;
+import com.tencent.cloud.polaris.ratelimit.resolver.RateLimitRuleArgumentServletResolver;
 import com.tencent.cloud.polaris.ratelimit.spi.PolarisRateLimiterLabelReactiveResolver;
 import com.tencent.cloud.polaris.ratelimit.spi.PolarisRateLimiterLabelServletResolver;
-import com.tencent.polaris.client.api.SDKContext;
-import com.tencent.polaris.ratelimit.api.core.LimitAPI;
-import com.tencent.polaris.ratelimit.factory.LimitAPIFactory;
+import com.tencent.cloud.polaris.ratelimit.spi.PolarisRateLimiterLimitedFallback;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.Nullable;
 
+import static com.tencent.cloud.polaris.ratelimit.filter.QuotaCheckServletFilter.QUOTA_FILTER_BEAN_NAME;
 import static javax.servlet.DispatcherType.ASYNC;
 import static javax.servlet.DispatcherType.ERROR;
 import static javax.servlet.DispatcherType.FORWARD;
@@ -51,38 +51,32 @@ import static javax.servlet.DispatcherType.REQUEST;
  *
  * @author Haotian Zhang
  */
-@Configuration
-@ConditionalOnPolarisEnabled
+@Configuration(proxyBeanMethods = false)
 @AutoConfigureAfter(PolarisContextAutoConfiguration.class)
-@ConditionalOnProperty(name = "spring.cloud.polaris.ratelimit.enabled", matchIfMissing = true)
+@ConditionalOnPolarisRateLimitEnabled
 public class PolarisRateLimitAutoConfiguration {
-
-	@Bean
-	@ConditionalOnMissingBean
-	public LimitAPI limitAPI(SDKContext polarisContext) {
-		return LimitAPIFactory.createLimitAPIByContext(polarisContext);
-	}
-
-	@Bean
-	public RateLimitRuleLabelResolver rateLimitRuleLabelService(ServiceRuleManager serviceRuleManager) {
-		return new RateLimitRuleLabelResolver(serviceRuleManager);
-	}
 
 	/**
 	 * Create when web application type is SERVLET.
 	 */
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
-	static class QuotaCheckFilterConfig {
+	protected static class QuotaCheckFilterConfig {
+
+		@Bean
+		public RateLimitRuleArgumentServletResolver rateLimitRuleArgumentResolver(ServiceRuleManager serviceRuleManager,
+				@Autowired(required = false) PolarisRateLimiterLabelServletResolver labelResolver) {
+			return new RateLimitRuleArgumentServletResolver(serviceRuleManager, labelResolver);
+		}
 
 		@Bean
 		@ConditionalOnMissingBean
-		public QuotaCheckServletFilter quotaCheckFilter(LimitAPI limitAPI,
-				@Nullable PolarisRateLimiterLabelServletResolver labelResolver,
+		public QuotaCheckServletFilter quotaCheckFilter(PolarisSDKContextManager polarisSDKContextManager,
 				PolarisRateLimitProperties polarisRateLimitProperties,
-				RateLimitRuleLabelResolver rateLimitRuleLabelResolver) {
-			return new QuotaCheckServletFilter(limitAPI, labelResolver,
-					polarisRateLimitProperties, rateLimitRuleLabelResolver);
+				RateLimitRuleArgumentServletResolver rateLimitRuleArgumentResolver,
+				@Autowired(required = false) PolarisRateLimiterLimitedFallback polarisRateLimiterLimitedFallback) {
+			return new QuotaCheckServletFilter(polarisSDKContextManager.getLimitAPI(), polarisRateLimitProperties,
+					rateLimitRuleArgumentResolver, polarisRateLimiterLimitedFallback);
 		}
 
 		@Bean
@@ -91,8 +85,8 @@ public class PolarisRateLimitAutoConfiguration {
 			FilterRegistrationBean<QuotaCheckServletFilter> registrationBean = new FilterRegistrationBean<>(
 					quotaCheckServletFilter);
 			registrationBean.setDispatcherTypes(ASYNC, ERROR, FORWARD, INCLUDE, REQUEST);
-			registrationBean.setName("quotaFilterRegistrationBean");
-			registrationBean.setOrder(RateLimitConstant.FILTER_ORDER);
+			registrationBean.setName(QUOTA_FILTER_BEAN_NAME);
+			registrationBean.setOrder(OrderConstant.Server.Servlet.RATE_LIMIT_FILTER_ORDER);
 			return registrationBean;
 		}
 
@@ -101,19 +95,23 @@ public class PolarisRateLimitAutoConfiguration {
 	/**
 	 * Create when web application type is REACTIVE.
 	 */
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
-	static class MetadataReactiveFilterConfig {
+	protected static class MetadataReactiveFilterConfig {
 
 		@Bean
-		public QuotaCheckReactiveFilter quotaCheckReactiveFilter(LimitAPI limitAPI,
-				@Nullable PolarisRateLimiterLabelReactiveResolver labelResolver,
-				PolarisRateLimitProperties polarisRateLimitProperties,
-				RateLimitRuleLabelResolver rateLimitRuleLabelResolver) {
-			return new QuotaCheckReactiveFilter(limitAPI, labelResolver,
-					polarisRateLimitProperties, rateLimitRuleLabelResolver);
+		public RateLimitRuleArgumentReactiveResolver rateLimitRuleArgumentResolver(ServiceRuleManager serviceRuleManager,
+				@Autowired(required = false) PolarisRateLimiterLabelReactiveResolver labelResolver) {
+			return new RateLimitRuleArgumentReactiveResolver(serviceRuleManager, labelResolver);
 		}
 
+		@Bean
+		public QuotaCheckReactiveFilter quotaCheckReactiveFilter(PolarisSDKContextManager polarisSDKContextManager,
+				PolarisRateLimitProperties polarisRateLimitProperties,
+				RateLimitRuleArgumentReactiveResolver rateLimitRuleArgumentResolver,
+				@Nullable PolarisRateLimiterLimitedFallback polarisRateLimiterLimitedFallback) {
+			return new QuotaCheckReactiveFilter(polarisSDKContextManager.getLimitAPI(), polarisRateLimitProperties,
+					rateLimitRuleArgumentResolver, polarisRateLimiterLimitedFallback);
+		}
 	}
-
 }

@@ -21,22 +21,22 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.assertj.core.api.Assertions;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
  * Test for {@link MetadataContextHolder}.
  *
  * @author Haotian Zhang
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
 		classes = MetadataContextHolderTest.TestApplication.class,
-		properties = { "spring.config.location = classpath:application-test.yml" })
+		properties = {"spring.config.location = classpath:application-test.yml"})
 public class MetadataContextHolderTest {
 
 	@Test
@@ -45,12 +45,16 @@ public class MetadataContextHolderTest {
 		customMetadata.put("a", "1");
 		customMetadata.put("b", "2");
 		MetadataContext metadataContext = MetadataContextHolder.get();
-		metadataContext.putFragmentContext(MetadataContext.FRAGMENT_TRANSITIVE, customMetadata);
+		metadataContext.setTransitiveMetadata(customMetadata);
 		MetadataContextHolder.set(metadataContext);
 
-		customMetadata = MetadataContextHolder.get().getFragmentContext(MetadataContext.FRAGMENT_TRANSITIVE);
+		customMetadata = MetadataContextHolder.get().getTransitiveMetadata();
 		Assertions.assertThat(customMetadata.get("a")).isEqualTo("1");
 		Assertions.assertThat(customMetadata.get("b")).isEqualTo("2");
+
+		Map<String, String> transHeaders = MetadataContextHolder.get().getTransHeaders();
+		Assertions.assertThat(transHeaders.size()).isEqualTo(1);
+		Assertions.assertThat(transHeaders.keySet().iterator().next()).isEqualTo("c,d");
 
 		MetadataContextHolder.remove();
 
@@ -58,13 +62,17 @@ public class MetadataContextHolderTest {
 		customMetadata.put("a", "1");
 		customMetadata.put("b", "22");
 		customMetadata.put("c", "3");
-		MetadataContextHolder.init(customMetadata);
+		MetadataContextHolder.init(customMetadata, new HashMap<>());
 		metadataContext = MetadataContextHolder.get();
-		customMetadata = metadataContext.getFragmentContext(MetadataContext.FRAGMENT_TRANSITIVE);
+		customMetadata = metadataContext.getTransitiveMetadata();
 		Assertions.assertThat(customMetadata.get("a")).isEqualTo("1");
 		Assertions.assertThat(customMetadata.get("b")).isEqualTo("22");
 		Assertions.assertThat(customMetadata.get("c")).isEqualTo("3");
 		Assertions.assertThat(MetadataContext.LOCAL_NAMESPACE).isEqualTo("default");
+
+		transHeaders = MetadataContextHolder.get().getTransHeaders();
+		Assertions.assertThat(transHeaders.size()).isEqualTo(1);
+		Assertions.assertThat(transHeaders.keySet().iterator().next()).isEqualTo("c,d");
 	}
 
 	@Test
@@ -77,5 +85,4 @@ public class MetadataContextHolderTest {
 	protected static class TestApplication {
 
 	}
-
 }

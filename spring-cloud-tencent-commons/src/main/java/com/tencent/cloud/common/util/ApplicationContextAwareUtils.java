@@ -20,14 +20,13 @@ package com.tencent.cloud.common.util;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.stereotype.Component;
+import org.springframework.lang.NonNull;
 
 /**
  * Spring Context Util.
  *
  * @author Hongwei Zhu
  */
-@Component
 public class ApplicationContextAwareUtils implements ApplicationContextAware {
 
 	private static ApplicationContext applicationContext;
@@ -41,7 +40,7 @@ public class ApplicationContextAwareUtils implements ApplicationContextAware {
 	}
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+	public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
 		ApplicationContextAwareUtils.applicationContext = applicationContext;
 	}
 
@@ -63,5 +62,4 @@ public class ApplicationContextAwareUtils implements ApplicationContextAware {
 	public static String getProperties(String key, String defaultValue) {
 		return applicationContext.getEnvironment().getProperty(key, defaultValue);
 	}
-
 }

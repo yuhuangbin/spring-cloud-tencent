@@ -17,6 +17,8 @@
 
 package com.tencent.cloud.common.constant;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * Constant for Context.
  *
@@ -29,39 +31,16 @@ public final class ContextConstant {
 	 */
 	public static final String POLARIS = "POLARIS";
 
-	private ContextConstant() {
-	}
+	/**
+	 * SCT Default Charset .
+	 */
+	public static final String UTF_8 = StandardCharsets.UTF_8.name();
 
 	/**
-	 * Order of configuration modifier.
+	 * Default registry heartbeat time interval: 5 (s).
 	 */
-	public static final class ModifierOrder {
+	public static final Integer DEFAULT_REGISTRY_HEARTBEAT_TIME_INTERVAL = 5;
 
-		/**
-		 * First modifier order.
-		 */
-		public static Integer FIRST = Integer.MIN_VALUE;
-
-		/**
-		 * Last modifier order.
-		 */
-		public static Integer LAST = Integer.MAX_VALUE;
-
-		/**
-		 * Order of circuit breaker configuration modifier.
-		 */
-		public static Integer CIRCUIT_BREAKER_ORDER = 1;
-
-		/**
-		 * Order of discovery configuration modifier.
-		 */
-		public static Integer DISCOVERY_ORDER = 0;
-
-		/**
-		 * Order of configuration modifier.
-		 */
-		public static Integer CONFIG_ORDER = 1;
-
+	private ContextConstant() {
 	}
-
 }

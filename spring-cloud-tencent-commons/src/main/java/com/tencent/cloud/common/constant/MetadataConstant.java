@@ -17,8 +17,6 @@
 
 package com.tencent.cloud.common.constant;
 
-import org.springframework.core.Ordered;
-
 /**
  * Constant for metadata.
  *
@@ -27,24 +25,24 @@ import org.springframework.core.Ordered;
 public final class MetadataConstant {
 
 	/**
-	 * Order of filter, interceptor, ...
+	 * sct transitive header prefix.
 	 */
-	public static class OrderConstant {
+	public static final String SCT_TRANSITIVE_HEADER_PREFIX = "X-SCT-Metadata-Transitive-";
+	/**
+	 * sct transitive header prefix length.
+	 */
+	public static final int SCT_TRANSITIVE_HEADER_PREFIX_LENGTH = SCT_TRANSITIVE_HEADER_PREFIX.length();
 
-		/**
-		 * Order of filter.
-		 */
-		public static final int WEB_FILTER_ORDER = Ordered.HIGHEST_PRECEDENCE + 13;
+	/**
+	 * polaris transitive header prefix.
+	 */
+	public static final String POLARIS_TRANSITIVE_HEADER_PREFIX = "X-Polaris-Metadata-Transitive-";
+	/**
+	 * polaris transitive header prefix length.
+	 */
+	public static final int POLARIS_TRANSITIVE_HEADER_PREFIX_LENGTH = POLARIS_TRANSITIVE_HEADER_PREFIX.length();
 
-		/**
-		 * Order of MetadataFirstFeignInterceptor.
-		 */
-		public static int METADATA_FIRST_FEIGN_INTERCEPTOR_ORDER = Ordered.HIGHEST_PRECEDENCE + 1;
-
-		/**
-		 * Order of Metadata2HeaderInterceptor.
-		 */
-		public static int METADATA_2_HEADER_INTERCEPTOR_ORDER = Ordered.LOWEST_PRECEDENCE;
+	private MetadataConstant() {
 
 	}
 
@@ -59,6 +57,11 @@ public final class MetadataConstant {
 		public static final String CUSTOM_METADATA = "SCT-CUSTOM-METADATA";
 
 		/**
+		 * Custom Disposable Metadata.
+		 */
+		public static final String CUSTOM_DISPOSABLE_METADATA = "SCT-CUSTOM-DISPOSABLE-METADATA";
+
+		/**
 		 * System Metadata.
 		 */
 		public static final String SYSTEM_METADATA = "SCT-SYSTEM-METADATA";
@@ -67,6 +70,19 @@ public final class MetadataConstant {
 		 * Metadata context.
 		 */
 		public static final String METADATA_CONTEXT = "SCT-METADATA-CONTEXT";
+	}
+
+	public static class DefaultMetadata {
+
+		/**
+		 * Default Metadata Source Service Namespace Key.
+		 */
+		public static final String DEFAULT_METADATA_SOURCE_SERVICE_NAMESPACE = "source_service_namespace";
+
+		/**
+		 * Default Metadata Source Service Name Key.
+		 */
+		public static final String DEFAULT_METADATA_SOURCE_SERVICE_NAME = "source_service_name";
 
 	}
 
